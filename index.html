@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="喵逮雞 POS">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#3f51b5" id="theme-color-meta">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/192/3f51b5/FFFFFF?text=Miao">
+    <title>喵逮雞 POS 系統</title>
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script> 
+</head>
+<body>
+
+    <div id="alarmModal" class="modal-base">
+        <div class="alarm-card">
+            <div class="alarm-header">🔔 訂單提醒！</div>
+            <div class="alarm-info" id="alarmMsg">
+                訂單時間快到了！<br>
+                <span id="alarmDetails"></span>
+            </div>
+            <button class="alarm-btn" onclick="stopAlarm()">我知道了 / 停止鬧鐘</button>
+        </div>
+    </div>
+
+    <div id="noteModal" class="modal-base">
+        <div class="modal-content">
+            <div class="modal-title">📝 編輯備註</div>
+            <textarea id="noteInput" placeholder="請輸入或使用語音..."></textarea>
+            <div class="modal-actions">
+                <button id="micBtn" class="modal-btn" onclick="toggleSpeech()">
+                    <span>🎤 語音輸入</span>
+                </button>
+                <button id="confirmNoteBtn" class="modal-btn" onclick="confirmNote()">確定</button>
+                <button id="cancelNoteBtn" class="modal-btn" onclick="closeNoteModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-section">
+        <div class="dashboard">
+            <div class="dash-item">
+                <div class="dash-label">📅 今日訂單</div>
+                <div class="dash-value" id="dashCount">0</div>
+            </div>
+            <div class="dash-item">
+                <div class="dash-label">💰 今日營業額</div>
+                <div class="dash-value" id="dashTotal">$0</div>
+            </div>
+        </div>
+
+        <div class="form-header">
+            <div class="date-display" id="dateDisplay"></div>
+            <div class="store-name">喵逮雞EGG燒燒</div>
+        </div>
+        
+        <div class="tools-bar">
+            <button class="tool-btn btn-calc" onclick="toggleCalculator()">🧮 計算機</button>
+            <button id="fullScreenBtn" class="tool-btn btn-full" onclick="toggleFullScreen()">[ 全螢幕 ]</button>
+            <button class="tool-btn btn-theme" onclick="toggleTheme()" id="themeBtn">[ 深色模式 ]</button>
+        </div>
+        
+        <div id="calculatorContainer">
+            <input type="text" class="calc-display" id="calcDisplay" readonly placeholder="0">
+            <div class="calc-buttons">
+                <button class="calc-btn clr" onclick="calcAction('C')">C</button>
+                <button class="calc-btn op" onclick="calcAction('/')">÷</button>
+                <button class="calc-btn op" onclick="calcAction('*')">×</button>
+                <button class="calc-btn op" onclick="calcAction('-')">-</button>
+                <button class="calc-btn num" onclick="calcAction('7')">7</button>
+                <button class="calc-btn num" onclick="calcAction('8')">8</button>
+                <button class="calc-btn num" onclick="calcAction('9')">9</button>
+                <button class="calc-btn op" onclick="calcAction('+')">+</button>
+                <button class="calc-btn num" onclick="calcAction('4')">4</button>
+                <button class="calc-btn num" onclick="calcAction('5')">5</button>
+                <button class="calc-btn num" onclick="calcAction('6')">6</button>
+                <button class="calc-btn" style="visibility:hidden"></button>
+                <button class="calc-btn num" onclick="calcAction('1')">1</button>
+                <button class="calc-btn num" onclick="calcAction('2')">2</button>
+                <button class="calc-btn num" onclick="calcAction('3')">3</button>
+                <button class="calc-btn eq" onclick="calcAction('=')">=</button>
+                <button class="calc-btn num" onclick="calcAction('0')" style="grid-column: span 2;">0</button>
+                <button class="calc-btn num" onclick="calcAction('.')">.</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr id="headerRow">
+                    <th>收</th> 
+                    <th>No</th>
+                    <th>原味<span class="th-price">(20)</span></th>
+                    <th>卡士<span class="th-price">(25)</span></th>
+                    <th>巧克<span class="th-price">(30)</span></th>
+                    <th>抹茶<span class="th-price">(30)</span></th>
+                    <th>草莓<span class="th-price">(30)</span></th>
+                    <th>鮪玉<span class="th-price">(30)</span></th>
+                    <th>菜餔<span class="th-price">(30)</span></th>
+                    <th>起司<span class="th-price">(35)</span></th>
+                    <th>泰奶<span class="th-price">(35)</span></th>
+                    <th>金沙<span class="th-price">(35)</span></th>
+                    <th>特定<span class="th-price">(35)</span></th>
+                    <th>總</th>
+                    <th>註</th>
+                </tr>
+            </thead>
+            <tbody id="dataRowsBody">
+            </tbody>
+        </table>
+
+        <div class="keypad" id="virtualKeypad">
+            <div class="keypad-grid">
+                <div class="keypad-button" data-value="7">7</div>
+                <div class="keypad-button" data-value="8">8</div>
+                <div class="keypad-button" data-value="9">9</div>
+                <div class="keypad-button keypad-btn-quick" data-value="10">10</div>
+                <div class="keypad-button" data-value="4">4</div>
+                <div class="keypad-button" data-value="5">5</div>
+                <div class="keypad-button" data-value="6">6</div>
+                <div class="keypad-button keypad-btn-quick" data-value="12">12</div>
+                <div class="keypad-button" data-value="1">1</div>
+                <div class="keypad-button" data-value="2">2</div>
+                <div class="keypad-button" data-value="3">3</div>
+                <div class="keypad-button keypad-btn-quick" data-value="15">15</div>
+                <div class="keypad-button" data-value="0">0</div>
+                <div class="keypad-button" data-value="00">00</div>
+                <div class="keypad-button keypad-btn-back" data-action="back">⌫</div>
+                <div class="keypad-button keypad-btn-quick" data-value="20">20</div>
+                <div class="keypad-action-clear keypad-button" data-action="clear">清空此格</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="pagination">
+        <button id="prevPageBtn" class="pagination-button" disabled>上一頁</button>
+        <button id="saveToDriveBtn" class="pagination-button" disabled>
+            <span id="saveButtonText">💾 儲存至 Google Sheets</span>
+        </button>
+        <div id="pageInfo">1 / 1</div>
+        <button id="nextPageBtn" class="pagination-button">下一頁</button>
+    </div>
+    <div class="header-section">
+         <div id="authStatus">請點擊儲存按鈕進行 Google 登入和授權。</div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
