@@ -1,1 +1,205 @@
 
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>喵逮雞 ERP - 系統管理中心</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --primary: #6366f1; --border: #e2e8f0;
+        }
+        [data-theme="dark"] {
+            --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --primary: #818cf8; --border: #334155;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg); color: var(--text);
+            margin: 0; display: flex; transition: all 0.3s ease;
+        }
+
+        /* --- 側邊欄 --- */
+        .sidebar {
+            width: 260px; height: 100vh; background: var(--card); border-right: 1px solid var(--border);
+            padding: 24px; position: sticky; top: 0;
+        }
+        .logo { font-size: 24px; font-weight: 900; color: var(--primary); margin-bottom: 40px; }
+        .nav-item {
+            padding: 12px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 8px;
+            transition: 0.2s; font-weight: 600;
+        }
+        .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
+
+        /* --- 主內容區 --- */
+        .main-content { flex: 1; padding: 40px; max-width: 1200px; }
+        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .card { background: var(--card); padding: 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+
+        /* --- 表單控制 --- */
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--primary); }
+        input, select {
+            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text); box-sizing: border-box;
+        }
+
+        /* --- 配方配置區 (BOM) --- */
+        .bom-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+        .bom-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+        .bom-item input[type="number"] { width: 80px; }
+
+        .btn {
+            padding: 12px 24px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-theme { background: var(--border); color: var(--text); }
+
+        .real-time-preview {
+            background: var(--primary); color: white; padding: 20px; border-radius: 12px; margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="logo">🐱 喵逮雞 ERP</div>
+    <div class="nav-item active">品項管理 (11)</div>
+    <div class="nav-item">內餡/庫存 (15)</div>
+    <div class="nav-item">供應商管理</div>
+    <div class="nav-item">報表分析</div>
+</div>
+
+<div class="main-content">
+    <div class="header-actions">
+        <h2>🛠️ 產品配方建檔中心</h2>
+        <button class="btn btn-theme" onclick="toggleTheme()">🌓 切換模式</button>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h3>🆕 新增/修改品項</h3>
+            <div class="form-group">
+                <label>口味名稱</label>
+                <input type="text" id="prodName" placeholder="例如：起司大叔">
+            </div>
+            <div class="form-group">
+                <label>預計售價 ($)</label>
+                <input type="number" id="prodPrice" value="35">
+            </div>
+            
+            <label>配方配置 (從 15 種材料中選擇)</label>
+            <div class="bom-list" id="bomList">
+                <div class="loading">正在載入雲端庫存...</div>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="saveProduct()">💾 儲存口味與配方</button>
+        </div>
+
+        <div class="card">
+            <h3>📈 獲利即時預覽</h3>
+            <div id="previewContent">
+                <p>請在左側輸入資料，系統將自動計算成本。</p>
+            </div>
+            
+            <div class="real-time-preview" id="profitCalc">
+                <div style="font-size: 14px; opacity: 0.9;">預計總食材成本</div>
+                <div style="font-size: 32px; font-weight: 900;" id="totalCost">$0.0</div>
+                <hr style="opacity: 0.3; margin: 15px 0;">
+                <div style="font-size: 14px; opacity: 0.9;">預計單份毛利</div>
+                <div style="font-size: 24px; font-weight: 900;" id="grossProfit">$0.0</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app";
+    let materials = [];
+
+    // 1. 切換主題
+    function toggleTheme() {
+        const theme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', theme);
+    }
+
+    // 2. 從後端抓取 15 種材料
+    async function loadMaterials() {
+        try {
+            const res = await fetch(`${API_URL}/api/inventory`);
+            const result = await res.json();
+            materials = result.data;
+            renderBOMList();
+        } catch (e) { console.error("載入失敗", e); }
+    }
+
+    // 3. 渲染配方選擇清單
+    function renderBOMList() {
+        const container = document.getElementById('bomList');
+        container.innerHTML = materials.map(m => `
+            <div class="bom-item">
+                <input type="checkbox" class="mat-check" data-id="${m.id}" data-cost="${m.unit_cost}" onchange="calculateRealTime()">
+                <span style="flex: 1">${m.name}</span>
+                <input type="number" class="mat-qty" placeholder="用量" step="0.1" data-id="${m.id}" oninput="calculateRealTime()">
+                <small>${m.unit}</small>
+            </div>
+        `).join('');
+    }
+
+    // 4. 即時計算成本與利潤
+    function calculateRealTime() {
+        let totalCost = 0;
+        const price = parseFloat(document.getElementById('prodPrice').value) || 0;
+        
+        document.querySelectorAll('.bom-item').forEach(item => {
+            const checkbox = item.querySelector('.mat-check');
+            const qtyInput = item.querySelector('.mat-qty');
+            
+            if (checkbox.checked) {
+                const cost = parseFloat(checkbox.dataset.cost);
+                const qty = parseFloat(qtyInput.value) || 0;
+                totalCost += (cost * qty);
+            }
+        });
+
+        document.getElementById('totalCost').textContent = `$${totalCost.toFixed(2)}`;
+        document.getElementById('grossProfit').textContent = `$${(price - totalCost).toFixed(2)}`;
+    }
+
+    // 5. 儲存至雲端
+    async function saveProduct() {
+        const name = document.getElementById('prodName').value;
+        const price = parseInt(document.getElementById('prodPrice').value);
+        const recipes = [];
+
+        document.querySelectorAll('.bom-item').forEach(item => {
+            const checkbox = item.querySelector('.mat-check');
+            if (checkbox.checked) {
+                recipes.push({
+                    material_id: parseInt(checkbox.dataset.id),
+                    consume_qty: parseFloat(item.querySelector('.mat-qty').value) || 0
+                });
+            }
+        });
+
+        const payload = { name, price, recipes };
+        
+        try {
+            const res = await fetch(`${API_URL}/api/admin/products`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+            alert(result.message);
+        } catch (e) { alert("儲存失敗"); }
+    }
+
+    window.onload = loadMaterials;
+</script>
+
+</body>
+</html>
