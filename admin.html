@@ -6,32 +6,17 @@
     <title>喵逮雞 ERP - 系統管理中心</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --primary: #6366f1; --border: #e2e8f0;
-        }
-        [data-theme="dark"] {
-            --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --primary: #818cf8; --border: #334155;
-        }
+        :root { --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --primary: #6366f1; --border: #e2e8f0; --success: #10b981;}
+        [data-theme="dark"] { --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --primary: #818cf8; --border: #334155; --success: #34d399;}
 
-        body {
-            font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg); color: var(--text);
-            margin: 0; display: flex; transition: all 0.3s ease; height: 100vh; overflow: hidden;
-        }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; transition: all 0.3s ease; height: 100vh; overflow: hidden; }
 
-        /* --- 側邊欄 --- */
-        .sidebar {
-            width: 260px; height: 100vh; background: var(--card); border-right: 1px solid var(--border);
-            padding: 24px; box-sizing: border-box;
-        }
+        .sidebar { width: 260px; height: 100vh; background: var(--card); border-right: 1px solid var(--border); padding: 24px; box-sizing: border-box; }
         .logo { font-size: 24px; font-weight: 900; color: var(--primary); margin-bottom: 40px; }
-        .nav-item {
-            padding: 12px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 8px;
-            transition: 0.2s; font-weight: 600; color: var(--text); opacity: 0.7;
-        }
+        .nav-item { padding: 12px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 8px; transition: 0.2s; font-weight: 600; color: var(--text); opacity: 0.7; }
         .nav-item:hover { opacity: 1; background: rgba(99, 102, 241, 0.1); }
         .nav-item.active { background: var(--primary); color: white; opacity: 1; }
 
-        /* --- 主內容區 --- */
         .main-content { flex: 1; padding: 40px; max-width: 1200px; overflow-y: auto; }
         .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
 
@@ -40,22 +25,22 @@
 
         .form-group { margin-bottom: 16px; }
         label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--primary); }
-        input, select {
-            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border);
-            background: var(--bg); color: var(--text); box-sizing: border-box;
-        }
+        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); box-sizing: border-box; }
 
-        .bom-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+        /* --- 🌟 新增：快速新增材料的樣式 --- */
+        .quick-add-box { background: var(--bg); padding: 16px; border-radius: 12px; border: 1px dashed var(--primary); margin-bottom: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;}
+        .quick-add-box input { padding: 8px; font-size: 13px; }
+
+        .bom-list { max-height: 280px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
         .bom-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
         .bom-item input[type="number"] { width: 80px; }
 
-        .btn { padding: 12px 24px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .btn { padding: 12px 24px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; padding: 8px 16px; }
         .btn-theme { background: var(--border); color: var(--text); }
         
         .real-time-preview { background: var(--primary); color: white; padding: 20px; border-radius: 12px; margin-top: 20px; }
-        
-        /* 隱藏未啟用的頁面 */
         .page-section { display: none; animation: fadeIn 0.3s ease; }
         .page-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -81,11 +66,21 @@
         <div class="grid">
             <div class="card">
                 <h3>🆕 新增/修改品項</h3>
-                <div class="form-group"><label>口味名稱</label><input type="text" id="prodName" placeholder="例如：起司大叔"></div>
-                <div class="form-group"><label>預計售價 ($)</label><input type="number" id="prodPrice" value="35"></div>
-                <label>配方配置 (勾選下方材料並輸入消耗量)</label>
+                <div class="form-group"><label>口味名稱</label><input type="text" id="prodName" placeholder="例如：珍珠卡士達"></div>
+                <div class="form-group"><label>預計售價 ($)</label><input type="number" id="prodPrice" value="40" oninput="calculateRealTime()"></div>
+                
+                <label>📦 配方配置 (庫存清單)</label>
+                
+                <div class="quick-add-box">
+                    <div style="width: 100%; font-size: 13px; font-weight: bold; color: var(--text); opacity: 0.8;">✨ 找不到材料？立刻建檔：</div>
+                    <input type="text" id="newMatName" placeholder="名稱 (如: 珍珠)" style="flex: 2;">
+                    <input type="text" id="newMatUnit" placeholder="單位 (如: 克)" style="flex: 1;">
+                    <input type="number" id="newMatCost" placeholder="成本/單位" style="flex: 1;" step="0.1">
+                    <button class="btn btn-success" onclick="quickAddMaterial()">➕ 新增材料</button>
+                </div>
+
                 <div class="bom-list" id="bomList">載入中...</div>
-                <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="saveProduct()">💾 儲存口味與配方</button>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="saveProduct()">💾 儲存此口味與配方</button>
             </div>
             <div class="card">
                 <h3>📈 獲利即時預覽</h3>
@@ -100,49 +95,20 @@
         </div>
     </div>
 
-    <div id="page-inventory" class="page-section">
-        <div class="card">
-            <h3>📦 倉庫與內餡管理</h3>
-            <p>老闆，這裡未來可以讓您手動新增「珍珠、紅豆、牽絲起司」等 15 種內餡的庫存與成本！</p>
-            <p style="color: var(--text); opacity: 0.5;">(模組建置中...)</p>
-        </div>
-    </div>
-
-    <div id="page-suppliers" class="page-section">
-        <div class="card">
-            <h3>🚚 供應商通訊錄</h3>
-            <p>記下送蛋阿伯和麵粉廠的聯絡方式與結帳週期。</p>
-            <p style="color: var(--text); opacity: 0.5;">(模組建置中...)</p>
-        </div>
-    </div>
-
-    <div id="page-reports" class="page-section">
-        <div class="card">
-            <h3>📊 深度報表分析</h3>
-            <p>與 dashboard.html 聯動，查看每週熱銷排行與毛利金牛！</p>
-            <p style="color: var(--text); opacity: 0.5;">(模組建置中...)</p>
-        </div>
-    </div>
-
+    <div id="page-inventory" class="page-section"><div class="card"><h3>📦 倉庫管理 (建置中)</h3></div></div>
+    <div id="page-suppliers" class="page-section"><div class="card"><h3>🚚 供應商管理 (建置中)</h3></div></div>
+    <div id="page-reports" class="page-section"><div class="card"><h3>📊 報表分析 (建置中)</h3></div></div>
 </div>
 
 <script>
     const API_URL = "https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app";
     let materials = [];
 
-    // 🌟 新增：切換頁面的 JavaScript 魔法
     function switchPage(pageId, element) {
-        // 1. 把所有左側按鈕的 active 狀態拿掉
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        // 2. 幫目前點擊的按鈕加上 active (亮起來)
         element.classList.add('active');
-        
-        // 3. 把所有內容頁面隱藏
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
-        // 4. 顯示對應的內容頁面
         document.getElementById('page-' + pageId).classList.add('active');
-
-        // 5. 順便換一下大標題
         document.getElementById('pageTitle').textContent = "🛠️ " + element.textContent;
     }
 
@@ -151,25 +117,86 @@
         document.body.setAttribute('data-theme', theme);
     }
 
+    // 🌟 修改：載入材料清單 (加入記憶功能)
     async function loadMaterials() {
+        // 1. 紀錄目前哪些材料被打勾了、填了多少數量 (記憶狀態)
+        const currentState = {};
+        document.querySelectorAll('.bom-item').forEach(item => {
+            const checkbox = item.querySelector('.mat-check');
+            const qty = item.querySelector('.mat-qty').value;
+            if (checkbox && checkbox.checked) {
+                currentState[checkbox.dataset.id] = qty;
+            }
+        });
+
         try {
             const res = await fetch(`${API_URL}/api/inventory`);
             const result = await res.json();
             materials = result.data;
             const container = document.getElementById('bomList');
+            
             if(materials.length === 0) {
-                container.innerHTML = "尚未建檔任何材料，請先檢查後端！";
+                container.innerHTML = "尚未建檔任何材料，請由上方快速新增！";
                 return;
             }
+            
+            // 2. 重新產生清單 HTML
             container.innerHTML = materials.map(m => `
                 <div class="bom-item">
                     <input type="checkbox" class="mat-check" data-id="${m.id}" data-cost="${m.unit_cost}" onchange="calculateRealTime()">
-                    <span style="flex: 1">${m.name}</span>
+                    <span style="flex: 1; font-weight: bold; color: var(--primary);">${m.name}</span>
                     <input type="number" class="mat-qty" placeholder="用量" step="0.1" data-id="${m.id}" oninput="calculateRealTime()">
-                    <small>${m.unit}</small>
+                    <small style="color: var(--text); opacity: 0.6;">${m.unit}</small>
                 </div>
             `).join('');
+
+            // 3. 把剛剛的記憶狀態還原回去
+            document.querySelectorAll('.bom-item').forEach(item => {
+                const checkbox = item.querySelector('.mat-check');
+                const qtyInput = item.querySelector('.mat-qty');
+                if (currentState[checkbox.dataset.id] !== undefined) {
+                    checkbox.checked = true;
+                    qtyInput.value = currentState[checkbox.dataset.id];
+                }
+            });
+            calculateRealTime();
         } catch (e) { console.error("載入失敗", e); }
+    }
+
+    // 🌟 新增：快速建立新材料的 API 呼叫
+    async function quickAddMaterial() {
+        const name = document.getElementById('newMatName').value.trim();
+        const unit = document.getElementById('newMatUnit').value.trim();
+        const unit_cost = parseFloat(document.getElementById('newMatCost').value);
+
+        if(!name || !unit || isNaN(unit_cost)) return alert("請填寫完整的材料名稱、單位與成本！");
+
+        const btn = document.querySelector('.quick-add-box .btn-success');
+        btn.textContent = "⏳ 新增中...";
+
+        try {
+            const res = await fetch(`${API_URL}/api/materials`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, unit, unit_cost })
+            });
+            const result = await res.json();
+            
+            if(result.status === 'success') {
+                // 清空輸入框
+                document.getElementById('newMatName').value = '';
+                document.getElementById('newMatUnit').value = '';
+                document.getElementById('newMatCost').value = '';
+                // 重新載入清單
+                await loadMaterials();
+            } else {
+                alert(result.message);
+            }
+        } catch (e) {
+            alert("新增失敗，請檢查網路連線！");
+        } finally {
+            btn.textContent = "➕ 新增材料";
+        }
     }
 
     function calculateRealTime() {
@@ -187,8 +214,10 @@
     }
 
     async function saveProduct() {
-        const name = document.getElementById('prodName').value;
+        const name = document.getElementById('prodName').value.trim();
         const price = parseInt(document.getElementById('prodPrice').value);
+        if(!name) return alert("請輸入口味名稱！");
+
         const recipes = [];
         document.querySelectorAll('.bom-item').forEach(item => {
             const checkbox = item.querySelector('.mat-check');
@@ -209,6 +238,14 @@
             });
             const result = await res.json();
             alert(result.message);
+            
+            // 儲存成功後清空表單
+            if(result.status === 'success') {
+                document.getElementById('prodName').value = '';
+                document.querySelectorAll('.mat-check').forEach(cb => cb.checked = false);
+                document.querySelectorAll('.mat-qty').forEach(qty => qty.value = '');
+                calculateRealTime();
+            }
         } catch (e) { alert("儲存失敗"); }
     }
 
