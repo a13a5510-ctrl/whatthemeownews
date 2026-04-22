@@ -11,14 +11,19 @@
 
         body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; transition: all 0.3s ease; height: 100vh; overflow: hidden; }
 
-        .sidebar { width: 260px; height: 100vh; background: var(--card); border-right: 1px solid var(--border); padding: 24px; box-sizing: border-box; }
+        /* --- 側邊欄 --- */
+        .sidebar { width: 260px; height: 100vh; background: var(--card); border-right: 1px solid var(--border); padding: 24px; box-sizing: border-box; flex-shrink: 0;}
         .logo { font-size: 24px; font-weight: 900; color: var(--primary); margin-bottom: 40px; }
         .nav-item { padding: 12px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 8px; transition: 0.2s; font-weight: 600; color: var(--text); opacity: 0.7; }
         .nav-item:hover { opacity: 1; background: rgba(99, 102, 241, 0.1); }
         .nav-item.active { background: var(--primary); color: white; opacity: 1; }
 
+        /* --- 主內容區 --- */
         .main-content { flex: 1; padding: 40px; max-width: 1200px; overflow-y: auto; }
         .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .header-actions h2 { margin: 0; }
+        
+        .btn-group { display: flex; gap: 10px; }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         .card { background: var(--card); padding: 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
@@ -27,7 +32,6 @@
         label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--primary); }
         input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); box-sizing: border-box; }
 
-        /* --- 🌟 新增：快速新增材料的樣式 --- */
         .quick-add-box { background: var(--bg); padding: 16px; border-radius: 12px; border: 1px dashed var(--primary); margin-bottom: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;}
         .quick-add-box input { padding: 8px; font-size: 13px; }
 
@@ -35,7 +39,7 @@
         .bom-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
         .bom-item input[type="number"] { width: 80px; }
 
-        .btn { padding: 12px 24px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; padding: 8px 16px; }
         .btn-theme { background: var(--border); color: var(--text); }
@@ -44,6 +48,49 @@
         .page-section { display: none; animation: fadeIn 0.3s ease; }
         .page-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* =========================================
+           自動適應 (iPad 與 手機真實環境)
+           ========================================= */
+        @media (max-width: 1024px) {
+            .grid { grid-template-columns: 1fr; } /* iPad 直立時自動變單排 */
+            .main-content { padding: 24px; }
+        }
+        @media (max-width: 768px) {
+            body { flex-direction: column; overflow-y: auto; height: auto; }
+            .sidebar { width: 100%; height: auto; position: sticky; top: 0; z-index: 100; border-right: none; border-bottom: 1px solid var(--border); padding: 12px; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; align-items: center;}
+            .logo { margin-bottom: 0; margin-right: 16px; font-size: 18px; white-space: nowrap; }
+            .nav-item { margin-bottom: 0; white-space: nowrap; padding: 8px 12px; font-size: 14px;}
+            .main-content { padding: 16px; overflow-y: visible;}
+            .header-actions { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .btn-group { width: 100%; display: flex; }
+            .btn-group .btn { flex: 1; }
+            .quick-add-box input { flex: 1 1 100%; } /* 手機上輸入框換行 */
+        }
+
+        /* =========================================
+           電腦端的「模擬手機」預覽模式 (模擬 iPhone 17 Pro 寬度)
+           ========================================= */
+        body.simulate-mobile {
+            max-width: 393px;
+            margin: 0 auto;
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            box-shadow: 0 0 30px rgba(0,0,0,0.15);
+            flex-direction: column;
+            overflow-y: auto;
+            height: 100vh;
+        }
+        body.simulate-mobile .sidebar { width: 100%; height: auto; position: sticky; top: 0; z-index: 100; border-right: none; border-bottom: 1px solid var(--border); padding: 12px; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; align-items: center;}
+        body.simulate-mobile .logo { display: none; } /* 手機預覽時隱藏大 Logo 節省空間 */
+        body.simulate-mobile .nav-item { margin-bottom: 0; white-space: nowrap; padding: 8px 12px; font-size: 14px;}
+        body.simulate-mobile .grid { grid-template-columns: 1fr; }
+        body.simulate-mobile .main-content { padding: 16px; overflow-y: visible;}
+        body.simulate-mobile .header-actions { flex-direction: column; align-items: stretch; gap: 12px; }
+        body.simulate-mobile .header-actions h2 { font-size: 20px; }
+        body.simulate-mobile .btn-group { display: flex; gap: 8px; width: 100%; }
+        body.simulate-mobile .btn-group .btn { flex: 1; padding: 8px; font-size: 13px;}
+        body.simulate-mobile .quick-add-box input { flex: 1 1 100%; }
     </style>
 </head>
 <body>
@@ -59,7 +106,10 @@
 <div class="main-content">
     <div class="header-actions">
         <h2 id="pageTitle">🛠️ 產品配方建檔中心</h2>
-        <button class="btn btn-theme" onclick="toggleTheme()">🌓 切換模式</button>
+        <div class="btn-group">
+            <button class="btn btn-theme" id="mobileToggleBtn" onclick="toggleMobileView()">📱 手機預覽</button>
+            <button class="btn btn-theme" onclick="toggleTheme()">🌓 切換模式</button>
+        </div>
     </div>
 
     <div id="page-products" class="page-section active">
@@ -70,7 +120,6 @@
                 <div class="form-group"><label>預計售價 ($)</label><input type="number" id="prodPrice" value="40" oninput="calculateRealTime()"></div>
                 
                 <label>📦 配方配置 (庫存清單)</label>
-                
                 <div class="quick-add-box">
                     <div style="width: 100%; font-size: 13px; font-weight: bold; color: var(--text); opacity: 0.8;">✨ 找不到材料？立刻建檔：</div>
                     <input type="text" id="newMatName" placeholder="名稱 (如: 珍珠)" style="flex: 2;">
@@ -117,9 +166,18 @@
         document.body.setAttribute('data-theme', theme);
     }
 
-    // 🌟 修改：載入材料清單 (加入記憶功能)
+    // 🌟 新增：切換手機預覽模式的魔法
+    function toggleMobileView() {
+        document.body.classList.toggle('simulate-mobile');
+        const btn = document.getElementById('mobileToggleBtn');
+        if (document.body.classList.contains('simulate-mobile')) {
+            btn.textContent = '💻 電腦模式';
+        } else {
+            btn.textContent = '📱 手機預覽';
+        }
+    }
+
     async function loadMaterials() {
-        // 1. 紀錄目前哪些材料被打勾了、填了多少數量 (記憶狀態)
         const currentState = {};
         document.querySelectorAll('.bom-item').forEach(item => {
             const checkbox = item.querySelector('.mat-check');
@@ -140,7 +198,6 @@
                 return;
             }
             
-            // 2. 重新產生清單 HTML
             container.innerHTML = materials.map(m => `
                 <div class="bom-item">
                     <input type="checkbox" class="mat-check" data-id="${m.id}" data-cost="${m.unit_cost}" onchange="calculateRealTime()">
@@ -150,7 +207,6 @@
                 </div>
             `).join('');
 
-            // 3. 把剛剛的記憶狀態還原回去
             document.querySelectorAll('.bom-item').forEach(item => {
                 const checkbox = item.querySelector('.mat-check');
                 const qtyInput = item.querySelector('.mat-qty');
@@ -163,7 +219,6 @@
         } catch (e) { console.error("載入失敗", e); }
     }
 
-    // 🌟 新增：快速建立新材料的 API 呼叫
     async function quickAddMaterial() {
         const name = document.getElementById('newMatName').value.trim();
         const unit = document.getElementById('newMatUnit').value.trim();
@@ -183,11 +238,9 @@
             const result = await res.json();
             
             if(result.status === 'success') {
-                // 清空輸入框
                 document.getElementById('newMatName').value = '';
                 document.getElementById('newMatUnit').value = '';
                 document.getElementById('newMatCost').value = '';
-                // 重新載入清單
                 await loadMaterials();
             } else {
                 alert(result.message);
@@ -239,7 +292,6 @@
             const result = await res.json();
             alert(result.message);
             
-            // 儲存成功後清空表單
             if(result.status === 'success') {
                 document.getElementById('prodName').value = '';
                 document.querySelectorAll('.mat-check').forEach(cb => cb.checked = false);
