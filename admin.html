@@ -35,9 +35,46 @@
         .quick-add-box { background: var(--bg); padding: 16px; border-radius: 12px; border: 1px dashed var(--primary); margin-bottom: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;}
         .quick-add-box input { padding: 8px; font-size: 13px; }
 
+        /* =========================================
+           🌟 修正：行動裝置友善的配方清單排版 (BOM List)
+           ========================================= */
         .bom-list { max-height: 280px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
-        .bom-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-        .bom-item input[type="number"] { width: 80px; }
+        .bom-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 12px 0; /* 增加上下間距，手指更好點 */
+            border-bottom: 1px solid var(--border); 
+        }
+        .bom-item .mat-check {
+            width: 22px; 
+            height: 22px; 
+            flex-shrink: 0; /* 絕對不允許核取方塊被壓縮 */
+            cursor: pointer;
+        }
+        .bom-item .mat-name {
+            flex: 1; 
+            font-weight: bold; 
+            color: var(--primary); 
+            white-space: nowrap; /* 🌟 核心修正：強制文字不換行，杜絕「竹簡Bug」 */
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            font-size: 15px;
+        }
+        .bom-item input[type="number"] { 
+            width: 85px !important; /* 固定輸入框寬度 */
+            flex-shrink: 0; /* 絕對不允許輸入框被壓縮 */
+            padding: 10px;
+            text-align: center;
+        }
+        .bom-item .mat-unit {
+            width: 20px;
+            flex-shrink: 0;
+            text-align: right;
+            color: var(--text); 
+            opacity: 0.6;
+            font-size: 13px;
+        }
 
         .btn { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         .btn-primary { background: var(--primary); color: white; }
@@ -53,7 +90,7 @@
            自動適應 (iPad 與 手機真實環境)
            ========================================= */
         @media (max-width: 1024px) {
-            .grid { grid-template-columns: 1fr; } /* iPad 直立時自動變單排 */
+            .grid { grid-template-columns: 1fr; } 
             .main-content { padding: 24px; }
         }
         @media (max-width: 768px) {
@@ -65,24 +102,15 @@
             .header-actions { flex-direction: column; align-items: flex-start; gap: 16px; }
             .btn-group { width: 100%; display: flex; }
             .btn-group .btn { flex: 1; }
-            .quick-add-box input { flex: 1 1 100%; } /* 手機上輸入框換行 */
+            .quick-add-box input { flex: 1 1 100%; } 
         }
 
         /* =========================================
            電腦端的「模擬手機」預覽模式 (模擬 iPhone 17 Pro 寬度)
            ========================================= */
-        body.simulate-mobile {
-            max-width: 393px;
-            margin: 0 auto;
-            border-left: 1px solid var(--border);
-            border-right: 1px solid var(--border);
-            box-shadow: 0 0 30px rgba(0,0,0,0.15);
-            flex-direction: column;
-            overflow-y: auto;
-            height: 100vh;
-        }
+        body.simulate-mobile { max-width: 393px; margin: 0 auto; border-left: 1px solid var(--border); border-right: 1px solid var(--border); box-shadow: 0 0 30px rgba(0,0,0,0.15); flex-direction: column; overflow-y: auto; height: 100vh; }
         body.simulate-mobile .sidebar { width: 100%; height: auto; position: sticky; top: 0; z-index: 100; border-right: none; border-bottom: 1px solid var(--border); padding: 12px; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; align-items: center;}
-        body.simulate-mobile .logo { display: none; } /* 手機預覽時隱藏大 Logo 節省空間 */
+        body.simulate-mobile .logo { display: none; } 
         body.simulate-mobile .nav-item { margin-bottom: 0; white-space: nowrap; padding: 8px 12px; font-size: 14px;}
         body.simulate-mobile .grid { grid-template-columns: 1fr; }
         body.simulate-mobile .main-content { padding: 16px; overflow-y: visible;}
@@ -166,7 +194,6 @@
         document.body.setAttribute('data-theme', theme);
     }
 
-    // 🌟 新增：切換手機預覽模式的魔法
     function toggleMobileView() {
         document.body.classList.toggle('simulate-mobile');
         const btn = document.getElementById('mobileToggleBtn');
@@ -198,12 +225,13 @@
                 return;
             }
             
+            // 🌟 修正：套用新的 CSS class，使 HTML 更乾淨，完美支援手機排版
             container.innerHTML = materials.map(m => `
                 <div class="bom-item">
                     <input type="checkbox" class="mat-check" data-id="${m.id}" data-cost="${m.unit_cost}" onchange="calculateRealTime()">
-                    <span style="flex: 1; font-weight: bold; color: var(--primary);">${m.name}</span>
+                    <span class="mat-name">${m.name}</span>
                     <input type="number" class="mat-qty" placeholder="用量" step="0.1" data-id="${m.id}" oninput="calculateRealTime()">
-                    <small style="color: var(--text); opacity: 0.6;">${m.unit}</small>
+                    <small class="mat-unit">${m.unit}</small>
                 </div>
             `).join('');
 
