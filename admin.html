@@ -62,10 +62,9 @@
         .btn-theme { background: var(--bg); color: var(--text); border: 1px solid var(--border);}
         .btn-theme:hover { background: var(--border); }
         
-        /* 預覽卡片優化 */
         .real-time-preview { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; padding: 24px; border-radius: 16px; margin-top: 20px; box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);}
         
-        /* 🌟 新增：專業的資料表格樣式 */
+        /* 表格樣式 */
         .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; text-align: left; background: var(--card); min-width: 600px;}
         th { background: var(--bg); color: var(--text); font-weight: 700; padding: 16px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border);}
@@ -77,17 +76,19 @@
         .badge-safe { background: rgba(16, 185, 129, 0.15); color: var(--success); }
         .badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
 
+        /* 🌟 新增：彈出式視窗 (Modal) 的專業樣式 */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; backdrop-filter: blur(4px);}
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal { background: var(--card); padding: 32px; border-radius: 20px; width: 90%; max-width: 450px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); transform: translateY(20px); transition: transform 0.3s ease; }
+        .modal-overlay.active .modal { transform: translateY(0); }
+        .modal h3 { margin-top: 0; color: var(--primary); font-size: 20px; margin-bottom: 24px;}
+
         .page-section { display: none; animation: fadeIn 0.4s ease; }
         .page-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* =========================================
-           自動適應 (iPad 與 手機真實環境)
-           ========================================= */
-        @media (max-width: 1024px) {
-            .grid { grid-template-columns: 1fr; } 
-            .main-content { padding: 24px; }
-        }
+        /* 自動適應 */
+        @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } .main-content { padding: 24px; } }
         @media (max-width: 768px) {
             body { flex-direction: column; overflow-y: auto; height: auto; }
             .sidebar { width: 100%; height: auto; position: sticky; top: 0; z-index: 100; border-right: none; border-bottom: 1px solid var(--border); padding: 12px; display: flex; flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: 8px; align-items: center; background: var(--card);}
@@ -100,7 +101,6 @@
             .quick-add-box input { flex: 1 1 100%; } 
             .card { padding: 16px; }
         }
-
         body.simulate-mobile { max-width: 393px; margin: 0 auto; border-left: 1px solid var(--border); border-right: 1px solid var(--border); box-shadow: 0 0 30px rgba(0,0,0,0.15); flex-direction: column; overflow-y: auto; height: 100vh; }
         body.simulate-mobile .sidebar { width: 100%; height: auto; position: sticky; top: 0; z-index: 100; border-right: none; border-bottom: 1px solid var(--border); padding: 12px; display: flex; flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: 8px; align-items: center;}
         body.simulate-mobile .logo { display: none; } 
@@ -188,11 +188,12 @@
                             <th>計量單位</th>
                             <th>單位成本</th>
                             <th>目前庫存量</th>
-                            <th>庫存狀態</th>
+                            <th>狀態</th>
+                            <th style="text-align: right;">操作</th>
                         </tr>
                     </thead>
                     <tbody id="inventoryTableBody">
-                        <tr><td colspan="5" style="text-align: center;">載入中...</td></tr>
+                        <tr><td colspan="6" style="text-align: center;">載入中...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -201,6 +202,39 @@
 
     <div id="page-suppliers" class="page-section"><div class="card"><h3>🚚 供應商管理 (建置中)</h3></div></div>
     <div id="page-reports" class="page-section"><div class="card"><h3>📊 報表分析 (建置中)</h3></div></div>
+</div>
+
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <h3>✏️ 調整材料與庫存</h3>
+        <input type="hidden" id="editMatId">
+        
+        <div class="form-group">
+            <label>材料名稱</label>
+            <input type="text" id="editMatName">
+        </div>
+        
+        <div class="grid" style="gap: 16px; margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>計量單位</label>
+                <input type="text" id="editMatUnit" placeholder="克、顆...">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>單位成本 ($)</label>
+                <input type="number" id="editMatCost" step="0.1">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label style="color: var(--success);">📦 庫存盤點量 (填入最新數量)</label>
+            <input type="number" id="editMatStock" step="0.1" style="font-size: 18px; font-weight: bold; color: var(--primary);">
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 30px;">
+            <button class="btn btn-theme" onclick="closeEditModal()">取消</button>
+            <button class="btn btn-primary" onclick="submitEditMaterial()">💾 儲存修改</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -226,7 +260,6 @@
         btn.textContent = document.body.classList.contains('simulate-mobile') ? '💻 電腦模式' : '📱 手機預覽';
     }
 
-    // 🌟 核心：載入並同時更新「配方區」與「庫存表格」
     async function loadMaterials() {
         const currentState = {};
         document.querySelectorAll('.bom-item').forEach(item => {
@@ -239,7 +272,7 @@
             const result = await res.json();
             materials = result.data;
             
-            // 1. 更新品項管理頁面的 BOM 列表
+            // 更新品項頁面清單
             const bomContainer = document.getElementById('bomList');
             if(materials.length === 0) {
                 bomContainer.innerHTML = "<div style='padding:20px;text-align:center;'>尚未建檔任何材料</div>";
@@ -252,8 +285,6 @@
                         <small class="mat-unit">${m.unit}</small>
                     </div>
                 `).join('');
-                
-                // 還原打勾狀態
                 document.querySelectorAll('.bom-item').forEach(item => {
                     const cb = item.querySelector('.mat-check');
                     if (currentState[cb.dataset.id] !== undefined) {
@@ -263,17 +294,13 @@
                 });
             }
 
-            // 2. 🌟 更新庫存管理頁面的專業表格
+            // 更新庫存表格 (加入編輯按鈕)
             const invContainer = document.getElementById('inventoryTableBody');
             if(materials.length === 0) {
-                invContainer.innerHTML = "<tr><td colspan='5' style='text-align: center;'>倉庫空空如也，請新增材料。</td></tr>";
+                invContainer.innerHTML = "<tr><td colspan='6' style='text-align: center;'>倉庫空空如也，請新增材料。</td></tr>";
             } else {
                 invContainer.innerHTML = materials.map(m => {
-                    // 判斷庫存燈號
-                    const statusBadge = m.stock_qty > 0 
-                        ? `<span class="badge badge-safe">充足</span>` 
-                        : `<span class="badge badge-danger">缺貨/未進貨</span>`;
-                    
+                    const statusBadge = m.stock_qty > 0 ? `<span class="badge badge-safe">充足</span>` : `<span class="badge badge-danger">缺貨</span>`;
                     return `
                     <tr>
                         <td style="font-weight: bold; color: var(--primary);">${m.name}</td>
@@ -281,25 +308,71 @@
                         <td>$${m.unit_cost.toFixed(2)}</td>
                         <td style="font-weight: bold; font-size: 16px;">${m.stock_qty}</td>
                         <td>${statusBadge}</td>
+                        <td style="text-align: right;">
+                            <button class="btn btn-theme" style="padding: 6px 12px; font-size: 13px;" 
+                            onclick="openEditModal(${m.id}, '${m.name}', '${m.unit}', ${m.unit_cost}, ${m.stock_qty})">✏️ 調整</button>
+                        </td>
                     </tr>
                 `}).join('');
             }
-
             calculateRealTime();
         } catch (e) { console.error("載入失敗", e); }
     }
 
-    // 🌟 共用：新增材料邏輯 (支援兩個頁面的輸入框)
-    async function addMaterial(source) {
-        let nameId, unitId, costId, btnElement;
-        
-        if (source === 'product') {
-            nameId = 'newMatName'; unitId = 'newMatUnit'; costId = 'newMatCost';
-            btnElement = document.querySelector('#page-products .btn-success');
-        } else {
-            nameId = 'invMatName'; unitId = 'invMatUnit'; costId = 'invMatCost';
-            btnElement = document.querySelector('#page-inventory .btn-primary');
+    // 🌟 打開與關閉編輯視窗
+    function openEditModal(id, name, unit, cost, stock) {
+        document.getElementById('editMatId').value = id;
+        document.getElementById('editMatName').value = name;
+        document.getElementById('editMatUnit').value = unit;
+        document.getElementById('editMatCost').value = cost;
+        document.getElementById('editMatStock').value = stock;
+        document.getElementById('editModal').classList.add('active');
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').classList.remove('active');
+    }
+
+    // 🌟 送出修改到後端
+    async function submitEditMaterial() {
+        const id = document.getElementById('editMatId').value;
+        const name = document.getElementById('editMatName').value.trim();
+        const unit = document.getElementById('editMatUnit').value.trim();
+        const unit_cost = parseFloat(document.getElementById('editMatCost').value);
+        const stock_qty = parseFloat(document.getElementById('editMatStock').value);
+
+        if(!name || !unit || isNaN(unit_cost) || isNaN(stock_qty)) return alert("請填寫完整的欄位！");
+
+        const btn = document.querySelector('#editModal .btn-primary');
+        const originalText = btn.textContent;
+        btn.textContent = "⏳ 儲存中...";
+
+        try {
+            const res = await fetch(`${API_URL}/api/materials/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, unit, unit_cost, stock_qty })
+            });
+            const result = await res.json();
+            
+            if(result.status === 'success') {
+                closeEditModal();
+                await loadMaterials(); // 重新載入，表格和配方區都會瞬間更新
+            } else {
+                alert(result.message);
+            }
+        } catch (e) {
+            alert("修改失敗，請檢查網路！");
+        } finally {
+            btn.textContent = originalText;
         }
+    }
+
+    async function addMaterial(source) {
+        let nameId = source === 'product' ? 'newMatName' : 'invMatName';
+        let unitId = source === 'product' ? 'newMatUnit' : 'invMatUnit';
+        let costId = source === 'product' ? 'newMatCost' : 'invMatCost';
+        let btnElement = source === 'product' ? document.querySelector('#page-products .btn-success') : document.querySelector('#page-inventory .btn-primary');
 
         const name = document.getElementById(nameId).value.trim();
         const unit = document.getElementById(unitId).value.trim();
@@ -322,15 +395,9 @@
                 document.getElementById(nameId).value = '';
                 document.getElementById(unitId).value = '';
                 document.getElementById(costId).value = '';
-                await loadMaterials(); // 重新載入，表格和列表都會同步更新！
-            } else {
-                alert(result.message);
-            }
-        } catch (e) {
-            alert("新增失敗，請檢查網路！");
-        } finally {
-            btnElement.textContent = originalText;
-        }
+                await loadMaterials(); 
+            } else { alert(result.message); }
+        } catch (e) { alert("新增失敗，請檢查網路！"); } finally { btnElement.textContent = originalText; }
     }
 
     function calculateRealTime() {
