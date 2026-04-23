@@ -6,85 +6,80 @@
     <title>喵逮雞 ERP - 系統管理中心</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --primary: #6366f1; --border: #e2e8f0; --success: #10b981;}
-        [data-theme="dark"] { --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --primary: #818cf8; --border: #334155; --success: #34d399;}
+        :root { 
+            --bg: #f0f4f8; --card: #ffffff; --text: #1e293b; 
+            --primary: #4f46e5; --primary-hover: #4338ca;
+            --border: #e2e8f0; --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+        }
+        [data-theme="dark"] { 
+            --bg: #0f172a; --card: #1e293b; --text: #f8fafc; 
+            --primary: #6366f1; --primary-hover: #818cf8;
+            --border: #334155; --success: #34d399; --danger: #f87171; --warning: #fbbf24;
+        }
 
         body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; transition: all 0.3s ease; height: 100vh; overflow: hidden; }
 
         /* --- 側邊欄 --- */
-        .sidebar { width: 260px; height: 100vh; background: var(--card); border-right: 1px solid var(--border); padding: 24px; box-sizing: border-box; flex-shrink: 0;}
-        .logo { font-size: 24px; font-weight: 900; color: var(--primary); margin-bottom: 40px; }
-        .nav-item { padding: 12px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 8px; transition: 0.2s; font-weight: 600; color: var(--text); opacity: 0.7; }
-        .nav-item:hover { opacity: 1; background: rgba(99, 102, 241, 0.1); }
-        .nav-item.active { background: var(--primary); color: white; opacity: 1; }
+        .sidebar { width: 260px; height: 100vh; background: var(--card); border-right: 1px solid var(--border); padding: 24px; box-sizing: border-box; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;}
+        .logo { font-size: 22px; font-weight: 900; color: var(--primary); margin-bottom: 32px; letter-spacing: 1px;}
+        .nav-item { padding: 14px 16px; border-radius: 10px; cursor: pointer; transition: 0.2s; font-weight: 600; color: var(--text); opacity: 0.7; display: flex; align-items: center; gap: 10px;}
+        .nav-item:hover { opacity: 1; background: rgba(79, 70, 229, 0.08); }
+        .nav-item.active { background: var(--primary); color: white; opacity: 1; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
 
         /* --- 主內容區 --- */
-        .main-content { flex: 1; padding: 40px; max-width: 1200px; overflow-y: auto; }
-        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-        .header-actions h2 { margin: 0; }
+        .main-content { flex: 1; padding: 40px; max-width: 1400px; overflow-y: auto; }
+        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 20px;}
+        .header-actions h2 { margin: 0; font-size: 24px; font-weight: 900;}
         
         .btn-group { display: flex; gap: 10px; }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .card { background: var(--card); padding: 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .card { background: var(--card); padding: 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px;}
+        .card h3 { margin-top: 0; display: flex; align-items: center; gap: 8px; color: var(--primary); font-size: 18px;}
 
         .form-group { margin-bottom: 16px; }
-        label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--primary); }
-        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); box-sizing: border-box; }
+        label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--text); opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px;}
+        input, select { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); box-sizing: border-box; font-size: 15px; transition: 0.2s; }
+        input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
 
-        .quick-add-box { background: var(--bg); padding: 16px; border-radius: 12px; border: 1px dashed var(--primary); margin-bottom: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;}
-        .quick-add-box input { padding: 8px; font-size: 13px; }
+        .quick-add-box { background: rgba(79, 70, 229, 0.05); padding: 16px; border-radius: 12px; border: 1px dashed var(--primary); margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;}
+        .quick-add-box input { padding: 10px; font-size: 14px; background: var(--card);}
 
-        /* =========================================
-           🌟 修正：行動裝置友善的配方清單排版 (BOM List)
-           ========================================= */
-        .bom-list { max-height: 280px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
-        .bom-item { 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-            padding: 12px 0; /* 增加上下間距，手指更好點 */
-            border-bottom: 1px solid var(--border); 
-        }
-        .bom-item .mat-check {
-            width: 22px; 
-            height: 22px; 
-            flex-shrink: 0; /* 絕對不允許核取方塊被壓縮 */
-            cursor: pointer;
-        }
-        .bom-item .mat-name {
-            flex: 1; 
-            font-weight: bold; 
-            color: var(--primary); 
-            white-space: nowrap; /* 🌟 核心修正：強制文字不換行，杜絕「竹簡Bug」 */
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            font-size: 15px;
-        }
-        .bom-item input[type="number"] { 
-            width: 85px !important; /* 固定輸入框寬度 */
-            flex-shrink: 0; /* 絕對不允許輸入框被壓縮 */
-            padding: 10px;
-            text-align: center;
-        }
-        .bom-item .mat-unit {
-            width: 20px;
-            flex-shrink: 0;
-            text-align: right;
-            color: var(--text); 
-            opacity: 0.6;
-            font-size: 13px;
-        }
+        /* 配方清單優化 */
+        .bom-list { max-height: 320px; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; padding: 10px 16px; background: var(--card);}
+        .bom-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px dashed var(--border); }
+        .bom-item:last-child { border-bottom: none; }
+        .bom-item .mat-check { width: 20px; height: 20px; flex-shrink: 0; cursor: pointer; accent-color: var(--primary);}
+        .bom-item .mat-name { flex: 1; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px;}
+        .bom-item input[type="number"] { width: 90px !important; flex-shrink: 0; padding: 8px; text-align: center; }
+        .bom-item .mat-unit { width: 24px; flex-shrink: 0; text-align: right; color: var(--text); opacity: 0.5; font-size: 13px; font-weight: bold;}
 
-        .btn { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; white-space: nowrap; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-success { background: var(--success); color: white; padding: 8px 16px; }
-        .btn-theme { background: var(--border); color: var(--text); }
+        /* 按鈕優化 */
+        .btn { padding: 12px 24px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; white-space: nowrap; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;}
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-success { background: var(--success); color: white; padding: 10px 16px; }
+        .btn-theme { background: var(--bg); color: var(--text); border: 1px solid var(--border);}
+        .btn-theme:hover { background: var(--border); }
         
-        .real-time-preview { background: var(--primary); color: white; padding: 20px; border-radius: 12px; margin-top: 20px; }
-        .page-section { display: none; animation: fadeIn 0.3s ease; }
+        /* 預覽卡片優化 */
+        .real-time-preview { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; padding: 24px; border-radius: 16px; margin-top: 20px; box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);}
+        
+        /* 🌟 新增：專業的資料表格樣式 */
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; text-align: left; background: var(--card); min-width: 600px;}
+        th { background: var(--bg); color: var(--text); font-weight: 700; padding: 16px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border);}
+        td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 15px; color: var(--text); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: rgba(79, 70, 229, 0.03); }
+        
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;}
+        .badge-safe { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+        .page-section { display: none; animation: fadeIn 0.4s ease; }
         .page-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
         /* =========================================
            自動適應 (iPad 與 手機真實環境)
@@ -95,45 +90,44 @@
         }
         @media (max-width: 768px) {
             body { flex-direction: column; overflow-y: auto; height: auto; }
-            .sidebar { width: 100%; height: auto; position: sticky; top: 0; z-index: 100; border-right: none; border-bottom: 1px solid var(--border); padding: 12px; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; align-items: center;}
+            .sidebar { width: 100%; height: auto; position: sticky; top: 0; z-index: 100; border-right: none; border-bottom: 1px solid var(--border); padding: 12px; display: flex; flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: 8px; align-items: center; background: var(--card);}
             .logo { margin-bottom: 0; margin-right: 16px; font-size: 18px; white-space: nowrap; }
-            .nav-item { margin-bottom: 0; white-space: nowrap; padding: 8px 12px; font-size: 14px;}
+            .nav-item { margin-bottom: 0; white-space: nowrap; padding: 10px 14px; font-size: 14px; border-radius: 8px;}
             .main-content { padding: 16px; overflow-y: visible;}
-            .header-actions { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .header-actions { flex-direction: column; align-items: flex-start; gap: 16px; padding-bottom: 16px;}
             .btn-group { width: 100%; display: flex; }
             .btn-group .btn { flex: 1; }
             .quick-add-box input { flex: 1 1 100%; } 
+            .card { padding: 16px; }
         }
 
-        /* =========================================
-           電腦端的「模擬手機」預覽模式 (模擬 iPhone 17 Pro 寬度)
-           ========================================= */
         body.simulate-mobile { max-width: 393px; margin: 0 auto; border-left: 1px solid var(--border); border-right: 1px solid var(--border); box-shadow: 0 0 30px rgba(0,0,0,0.15); flex-direction: column; overflow-y: auto; height: 100vh; }
-        body.simulate-mobile .sidebar { width: 100%; height: auto; position: sticky; top: 0; z-index: 100; border-right: none; border-bottom: 1px solid var(--border); padding: 12px; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; align-items: center;}
+        body.simulate-mobile .sidebar { width: 100%; height: auto; position: sticky; top: 0; z-index: 100; border-right: none; border-bottom: 1px solid var(--border); padding: 12px; display: flex; flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: 8px; align-items: center;}
         body.simulate-mobile .logo { display: none; } 
-        body.simulate-mobile .nav-item { margin-bottom: 0; white-space: nowrap; padding: 8px 12px; font-size: 14px;}
+        body.simulate-mobile .nav-item { margin-bottom: 0; white-space: nowrap; padding: 10px 14px; font-size: 14px;}
         body.simulate-mobile .grid { grid-template-columns: 1fr; }
         body.simulate-mobile .main-content { padding: 16px; overflow-y: visible;}
         body.simulate-mobile .header-actions { flex-direction: column; align-items: stretch; gap: 12px; }
         body.simulate-mobile .header-actions h2 { font-size: 20px; }
         body.simulate-mobile .btn-group { display: flex; gap: 8px; width: 100%; }
-        body.simulate-mobile .btn-group .btn { flex: 1; padding: 8px; font-size: 13px;}
+        body.simulate-mobile .btn-group .btn { flex: 1; padding: 10px; font-size: 13px;}
         body.simulate-mobile .quick-add-box input { flex: 1 1 100%; }
+        body.simulate-mobile .card { padding: 16px; }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
     <div class="logo">🐱 喵逮雞 ERP</div>
-    <div class="nav-item active" onclick="switchPage('products', this)">品項管理 (11)</div>
-    <div class="nav-item" onclick="switchPage('inventory', this)">內餡/庫存管理</div>
-    <div class="nav-item" onclick="switchPage('suppliers', this)">供應商管理</div>
-    <div class="nav-item" onclick="switchPage('reports', this)">報表分析</div>
+    <div class="nav-item active" onclick="switchPage('products', this)">📋 品項管理 (11)</div>
+    <div class="nav-item" onclick="switchPage('inventory', this)">📦 內餡/庫存管理</div>
+    <div class="nav-item" onclick="switchPage('suppliers', this)">🚚 供應商管理</div>
+    <div class="nav-item" onclick="switchPage('reports', this)">📊 報表分析</div>
 </div>
 
 <div class="main-content">
     <div class="header-actions">
-        <h2 id="pageTitle">🛠️ 產品配方建檔中心</h2>
+        <h2 id="pageTitle">📋 產品配方建檔中心</h2>
         <div class="btn-group">
             <button class="btn btn-theme" id="mobileToggleBtn" onclick="toggleMobileView()">📱 手機預覽</button>
             <button class="btn btn-theme" onclick="toggleTheme()">🌓 切換模式</button>
@@ -147,32 +141,64 @@
                 <div class="form-group"><label>口味名稱</label><input type="text" id="prodName" placeholder="例如：珍珠卡士達"></div>
                 <div class="form-group"><label>預計售價 ($)</label><input type="number" id="prodPrice" value="40" oninput="calculateRealTime()"></div>
                 
-                <label>📦 配方配置 (庫存清單)</label>
+                <label>📦 配方配置 (勾選下方庫存)</label>
                 <div class="quick-add-box">
-                    <div style="width: 100%; font-size: 13px; font-weight: bold; color: var(--text); opacity: 0.8;">✨ 找不到材料？立刻建檔：</div>
+                    <div style="width: 100%; font-size: 13px; font-weight: bold; color: var(--primary);">✨ 找不到材料？立刻建檔入庫：</div>
                     <input type="text" id="newMatName" placeholder="名稱 (如: 珍珠)" style="flex: 2;">
                     <input type="text" id="newMatUnit" placeholder="單位 (如: 克)" style="flex: 1;">
-                    <input type="number" id="newMatCost" placeholder="成本/單位" style="flex: 1;" step="0.1">
-                    <button class="btn btn-success" onclick="quickAddMaterial()">➕ 新增材料</button>
+                    <input type="number" id="newMatCost" placeholder="成本" style="flex: 1;" step="0.1">
+                    <button class="btn btn-success" onclick="addMaterial('product')">➕ 新增</button>
                 </div>
 
                 <div class="bom-list" id="bomList">載入中...</div>
-                <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="saveProduct()">💾 儲存此口味與配方</button>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 24px;" onclick="saveProduct()">💾 儲存此口味與配方</button>
             </div>
+            
             <div class="card">
                 <h3>📈 獲利即時預覽</h3>
                 <div class="real-time-preview">
                     <div style="font-size: 14px; opacity: 0.9;">預計總食材成本</div>
-                    <div style="font-size: 32px; font-weight: 900;" id="totalCost">$0.0</div>
-                    <hr style="opacity: 0.3; margin: 15px 0;">
+                    <div style="font-size: 36px; font-weight: 900;" id="totalCost">$0.0</div>
+                    <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
                     <div style="font-size: 14px; opacity: 0.9;">預計單份毛利</div>
-                    <div style="font-size: 24px; font-weight: 900;" id="grossProfit">$0.0</div>
+                    <div style="font-size: 28px; font-weight: 900;" id="grossProfit">$0.0</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="page-inventory" class="page-section"><div class="card"><h3>📦 倉庫管理 (建置中)</h3></div></div>
+    <div id="page-inventory" class="page-section">
+        <div class="card" style="margin-bottom: 24px;">
+            <h3>➕ 獨立建檔材料 (入庫)</h3>
+            <div class="quick-add-box" style="margin-bottom: 0;">
+                <input type="text" id="invMatName" placeholder="材料名稱 (如: 牽絲起司)" style="flex: 2;">
+                <input type="text" id="invMatUnit" placeholder="單位 (如: 片)" style="flex: 1;">
+                <input type="number" id="invMatCost" placeholder="單位成本 (元)" style="flex: 1;" step="0.1">
+                <button class="btn btn-primary" onclick="addMaterial('inventory')">📥 確認入庫建檔</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📦 喵逮雞 總倉庫存明細</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>材料名稱</th>
+                            <th>計量單位</th>
+                            <th>單位成本</th>
+                            <th>目前庫存量</th>
+                            <th>庫存狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                        <tr><td colspan="5" style="text-align: center;">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div id="page-suppliers" class="page-section"><div class="card"><h3>🚚 供應商管理 (建置中)</h3></div></div>
     <div id="page-reports" class="page-section"><div class="card"><h3>📊 報表分析 (建置中)</h3></div></div>
 </div>
@@ -186,7 +212,7 @@
         element.classList.add('active');
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
         document.getElementById('page-' + pageId).classList.add('active');
-        document.getElementById('pageTitle').textContent = "🛠️ " + element.textContent;
+        document.getElementById('pageTitle').textContent = element.textContent;
     }
 
     function toggleTheme() {
@@ -197,65 +223,92 @@
     function toggleMobileView() {
         document.body.classList.toggle('simulate-mobile');
         const btn = document.getElementById('mobileToggleBtn');
-        if (document.body.classList.contains('simulate-mobile')) {
-            btn.textContent = '💻 電腦模式';
-        } else {
-            btn.textContent = '📱 手機預覽';
-        }
+        btn.textContent = document.body.classList.contains('simulate-mobile') ? '💻 電腦模式' : '📱 手機預覽';
     }
 
+    // 🌟 核心：載入並同時更新「配方區」與「庫存表格」
     async function loadMaterials() {
         const currentState = {};
         document.querySelectorAll('.bom-item').forEach(item => {
             const checkbox = item.querySelector('.mat-check');
-            const qty = item.querySelector('.mat-qty').value;
-            if (checkbox && checkbox.checked) {
-                currentState[checkbox.dataset.id] = qty;
-            }
+            if (checkbox && checkbox.checked) currentState[checkbox.dataset.id] = item.querySelector('.mat-qty').value;
         });
 
         try {
             const res = await fetch(`${API_URL}/api/inventory`);
             const result = await res.json();
             materials = result.data;
-            const container = document.getElementById('bomList');
             
+            // 1. 更新品項管理頁面的 BOM 列表
+            const bomContainer = document.getElementById('bomList');
             if(materials.length === 0) {
-                container.innerHTML = "尚未建檔任何材料，請由上方快速新增！";
-                return;
+                bomContainer.innerHTML = "<div style='padding:20px;text-align:center;'>尚未建檔任何材料</div>";
+            } else {
+                bomContainer.innerHTML = materials.map(m => `
+                    <div class="bom-item">
+                        <input type="checkbox" class="mat-check" data-id="${m.id}" data-cost="${m.unit_cost}" onchange="calculateRealTime()">
+                        <span class="mat-name">${m.name}</span>
+                        <input type="number" class="mat-qty" placeholder="用量" step="0.1" data-id="${m.id}" oninput="calculateRealTime()">
+                        <small class="mat-unit">${m.unit}</small>
+                    </div>
+                `).join('');
+                
+                // 還原打勾狀態
+                document.querySelectorAll('.bom-item').forEach(item => {
+                    const cb = item.querySelector('.mat-check');
+                    if (currentState[cb.dataset.id] !== undefined) {
+                        cb.checked = true;
+                        item.querySelector('.mat-qty').value = currentState[cb.dataset.id];
+                    }
+                });
             }
-            
-            // 🌟 修正：套用新的 CSS class，使 HTML 更乾淨，完美支援手機排版
-            container.innerHTML = materials.map(m => `
-                <div class="bom-item">
-                    <input type="checkbox" class="mat-check" data-id="${m.id}" data-cost="${m.unit_cost}" onchange="calculateRealTime()">
-                    <span class="mat-name">${m.name}</span>
-                    <input type="number" class="mat-qty" placeholder="用量" step="0.1" data-id="${m.id}" oninput="calculateRealTime()">
-                    <small class="mat-unit">${m.unit}</small>
-                </div>
-            `).join('');
 
-            document.querySelectorAll('.bom-item').forEach(item => {
-                const checkbox = item.querySelector('.mat-check');
-                const qtyInput = item.querySelector('.mat-qty');
-                if (currentState[checkbox.dataset.id] !== undefined) {
-                    checkbox.checked = true;
-                    qtyInput.value = currentState[checkbox.dataset.id];
-                }
-            });
+            // 2. 🌟 更新庫存管理頁面的專業表格
+            const invContainer = document.getElementById('inventoryTableBody');
+            if(materials.length === 0) {
+                invContainer.innerHTML = "<tr><td colspan='5' style='text-align: center;'>倉庫空空如也，請新增材料。</td></tr>";
+            } else {
+                invContainer.innerHTML = materials.map(m => {
+                    // 判斷庫存燈號
+                    const statusBadge = m.stock_qty > 0 
+                        ? `<span class="badge badge-safe">充足</span>` 
+                        : `<span class="badge badge-danger">缺貨/未進貨</span>`;
+                    
+                    return `
+                    <tr>
+                        <td style="font-weight: bold; color: var(--primary);">${m.name}</td>
+                        <td>${m.unit}</td>
+                        <td>$${m.unit_cost.toFixed(2)}</td>
+                        <td style="font-weight: bold; font-size: 16px;">${m.stock_qty}</td>
+                        <td>${statusBadge}</td>
+                    </tr>
+                `}).join('');
+            }
+
             calculateRealTime();
         } catch (e) { console.error("載入失敗", e); }
     }
 
-    async function quickAddMaterial() {
-        const name = document.getElementById('newMatName').value.trim();
-        const unit = document.getElementById('newMatUnit').value.trim();
-        const unit_cost = parseFloat(document.getElementById('newMatCost').value);
+    // 🌟 共用：新增材料邏輯 (支援兩個頁面的輸入框)
+    async function addMaterial(source) {
+        let nameId, unitId, costId, btnElement;
+        
+        if (source === 'product') {
+            nameId = 'newMatName'; unitId = 'newMatUnit'; costId = 'newMatCost';
+            btnElement = document.querySelector('#page-products .btn-success');
+        } else {
+            nameId = 'invMatName'; unitId = 'invMatUnit'; costId = 'invMatCost';
+            btnElement = document.querySelector('#page-inventory .btn-primary');
+        }
+
+        const name = document.getElementById(nameId).value.trim();
+        const unit = document.getElementById(unitId).value.trim();
+        const unit_cost = parseFloat(document.getElementById(costId).value);
 
         if(!name || !unit || isNaN(unit_cost)) return alert("請填寫完整的材料名稱、單位與成本！");
 
-        const btn = document.querySelector('.quick-add-box .btn-success');
-        btn.textContent = "⏳ 新增中...";
+        const originalText = btnElement.textContent;
+        btnElement.textContent = "⏳ 新增中...";
 
         try {
             const res = await fetch(`${API_URL}/api/materials`, {
@@ -266,17 +319,17 @@
             const result = await res.json();
             
             if(result.status === 'success') {
-                document.getElementById('newMatName').value = '';
-                document.getElementById('newMatUnit').value = '';
-                document.getElementById('newMatCost').value = '';
-                await loadMaterials();
+                document.getElementById(nameId).value = '';
+                document.getElementById(unitId).value = '';
+                document.getElementById(costId).value = '';
+                await loadMaterials(); // 重新載入，表格和列表都會同步更新！
             } else {
                 alert(result.message);
             }
         } catch (e) {
-            alert("新增失敗，請檢查網路連線！");
+            alert("新增失敗，請檢查網路！");
         } finally {
-            btn.textContent = "➕ 新增材料";
+            btnElement.textContent = originalText;
         }
     }
 
@@ -285,9 +338,8 @@
         const price = parseFloat(document.getElementById('prodPrice').value) || 0;
         document.querySelectorAll('.bom-item').forEach(item => {
             const checkbox = item.querySelector('.mat-check');
-            const qtyInput = item.querySelector('.mat-qty');
             if (checkbox.checked) {
-                totalCost += (parseFloat(checkbox.dataset.cost) * (parseFloat(qtyInput.value) || 0));
+                totalCost += (parseFloat(checkbox.dataset.cost) * (parseFloat(item.querySelector('.mat-qty').value) || 0));
             }
         });
         document.getElementById('totalCost').textContent = `$${totalCost.toFixed(2)}`;
