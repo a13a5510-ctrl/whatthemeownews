@@ -23,8 +23,13 @@
         
         .btn-group { display: flex; gap: 10px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .card { background: var(--card); padding: 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px;}
-        .card h3 { margin-top: 0; display: flex; align-items: center; gap: 8px; color: var(--primary); font-size: 18px;}
+        
+        /* 🌟 拖曳區塊的專屬樣式 */
+        .card { background: var(--card); padding: 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px; transition: transform 0.2s, box-shadow 0.2s; }
+        .card.dragging { opacity: 0.5; transform: scale(0.98); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .card.drag-over { border: 2px dashed var(--primary); transform: scale(1.02); }
+        .card h3 { margin-top: 0; display: flex; align-items: center; gap: 8px; color: var(--primary); font-size: 18px; cursor: grab; padding-bottom: 8px;}
+        .card h3:active { cursor: grabbing; }
 
         .form-group { margin-bottom: 16px; }
         label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--text); opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px;}
@@ -64,7 +69,7 @@
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; backdrop-filter: blur(4px);}
         .modal-overlay.active { display: flex; opacity: 1; }
-        .modal { background: var(--card); padding: 32px; border-radius: 20px; width: 90%; max-width: 450px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); transform: translateY(20px); transition: transform 0.3s ease; }
+        .modal { background: var(--card); padding: 32px; border-radius: 20px; width: 90%; max-width: 450px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); transform: translateY(20px); transition: transform 0.3s ease; max-height: 90vh; overflow-y: auto;}
         .modal-overlay.active .modal { transform: translateY(0); }
         .modal h3 { margin-top: 0; color: var(--primary); font-size: 20px; margin-bottom: 24px;}
 
@@ -119,9 +124,30 @@
     </div>
 
     <div id="page-products" class="page-section active">
-        <div class="grid">
-            <div class="card">
-                <h3>🆕 新增品項與配方</h3>
+        <div class="card drag-card">
+            <h3 title="按住可拖曳此區塊">🍔 現有品項與配方清單 (🤚 拖曳標題移動)</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>品項名稱</th>
+                            <th>售價</th>
+                            <th>食材總成本</th>
+                            <th>預估毛利</th>
+                            <th>配方明細 (BOM)</th>
+                            <th style="text-align: right;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTableBody">
+                        <tr><td colspan="6" style="text-align: center;">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="grid" id="productGridCards">
+            <div class="card drag-card">
+                <h3 title="按住可拖曳此區塊">🆕 新增品項與配方 (🤚 拖曳)</h3>
                 <div class="form-group"><label>口味名稱</label><input type="text" id="prodName" placeholder="例如：珍珠卡士達"></div>
                 <div class="form-group"><label>預計售價 ($)</label><input type="number" id="prodPrice" value="40" oninput="calculateRealTime()"></div>
                 
@@ -138,8 +164,8 @@
                 <button class="btn btn-primary" style="width: 100%; margin-top: 24px;" onclick="saveProduct()">💾 儲存此口味與配方</button>
             </div>
             
-            <div class="card">
-                <h3>📈 獲利即時預覽</h3>
+            <div class="card drag-card">
+                <h3 title="按住可拖曳此區塊">📈 獲利即時預覽 (🤚 拖曳)</h3>
                 <div class="real-time-preview">
                     <div style="font-size: 14px; opacity: 0.9;">預計總食材成本</div>
                     <div style="font-size: 36px; font-weight: 900;" id="totalCost">$0.0</div>
@@ -149,31 +175,11 @@
                 </div>
             </div>
         </div>
-
-        <div class="card" style="margin-top: 24px;">
-            <h3>🍔 現有品項與配方清單</h3>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>品項名稱</th>
-                            <th>售價</th>
-                            <th>食材總成本</th>
-                            <th>預估毛利</th>
-                            <th>配方明細 (BOM)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="productTableBody">
-                        <tr><td colspan="5" style="text-align: center;">載入中...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
 
     <div id="page-inventory" class="page-section">
-        <div class="card" style="margin-bottom: 24px;">
-            <h3>➕ 獨立建檔材料 (入庫)</h3>
+        <div class="card drag-card" style="margin-bottom: 24px;">
+            <h3 title="按住可拖曳此區塊">➕ 獨立建檔材料 (🤚 拖曳)</h3>
             <div class="quick-add-box" style="margin-bottom: 0;">
                 <input type="text" id="invMatName" placeholder="材料名稱 (如: 牽絲起司)" style="flex: 2;">
                 <input type="text" id="invMatUnit" placeholder="單位 (如: 片)" style="flex: 1;">
@@ -182,8 +188,8 @@
             </div>
         </div>
 
-        <div class="card">
-            <h3>📦 喵逮雞 總倉庫存明細</h3>
+        <div class="card drag-card">
+            <h3 title="按住可拖曳此區塊">📦 喵逮雞 總倉庫存明細 (🤚 拖曳)</h3>
             <div class="table-responsive">
                 <table>
                     <thead>
@@ -228,9 +234,34 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="editProductModal">
+    <div class="modal" style="max-width: 500px;">
+        <h3>🍔 調整現有口味與配方</h3>
+        <input type="hidden" id="editProdId">
+        <div class="grid" style="gap: 16px; margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 0;"><label>口味名稱</label><input type="text" id="editProdName"></div>
+            <div class="form-group" style="margin-bottom: 0;"><label>售價 ($)</label><input type="number" id="editProdPrice" oninput="calculateEditRealTime()"></div>
+        </div>
+        
+        <label>📦 重新勾選配方 (BOM)</label>
+        <div class="bom-list" id="editBomList">載入中...</div>
+        
+        <div class="real-time-preview" style="padding: 16px; margin-top: 16px;">
+            <div style="font-size: 13px;">更新後預計單份毛利</div>
+            <div style="font-size: 24px; font-weight: 900;" id="editGrossProfit">$0.0</div>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+            <button class="btn btn-theme" onclick="closeEditProductModal()">取消</button>
+            <button class="btn btn-primary" onclick="submitEditProduct()">💾 儲存口味修改</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const API_URL = "https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app";
     let materials = [];
+    let productsList = []; // 儲存所有品項資料供編輯使用
 
     function switchPage(pageId, element) {
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -250,9 +281,67 @@
         document.getElementById('mobileToggleBtn').textContent = document.body.classList.contains('simulate-mobile') ? '💻 電腦模式' : '📱 手機預覽';
     }
 
+    // ==========================================
+    // 🌟 魔法：HTML5 拖曳區塊功能 (Drag & Drop)
+    // ==========================================
+    function initDragAndDrop() {
+        const cards = document.querySelectorAll('.drag-card');
+        let draggedCard = null;
+
+        cards.forEach(card => {
+            card.setAttribute('draggable', true);
+            
+            card.addEventListener('dragstart', function(e) {
+                // 點擊輸入框時不要觸發拖曳
+                if(['INPUT', 'BUTTON', 'SELECT', 'LABEL'].includes(e.target.tagName)) {
+                    e.preventDefault(); return;
+                }
+                draggedCard = this;
+                setTimeout(() => this.classList.add('dragging'), 0);
+            });
+
+            card.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                cards.forEach(c => c.classList.remove('drag-over'));
+                draggedCard = null;
+            });
+
+            card.addEventListener('dragover', function(e) {
+                e.preventDefault(); // 允許放下
+            });
+
+            card.addEventListener('dragenter', function(e) {
+                e.preventDefault();
+                if(this !== draggedCard) this.classList.add('drag-over');
+            });
+
+            card.addEventListener('dragleave', function() {
+                if(this !== draggedCard) this.classList.remove('drag-over');
+            });
+
+            card.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                if(this !== draggedCard && draggedCard) {
+                    // 交換位置的邏輯
+                    const parent = this.parentNode;
+                    const allCards = [...parent.querySelectorAll('.drag-card')];
+                    const draggedIndex = allCards.indexOf(draggedCard);
+                    const targetIndex = allCards.indexOf(this);
+                    
+                    if (draggedIndex < targetIndex) {
+                        parent.insertBefore(draggedCard, this.nextSibling);
+                    } else {
+                        parent.insertBefore(draggedCard, this);
+                    }
+                }
+            });
+        });
+    }
+
     async function loadMaterials() {
         const currentState = {};
-        document.querySelectorAll('.bom-item').forEach(item => {
+        document.querySelectorAll('#page-products .bom-item').forEach(item => {
             const cb = item.querySelector('.mat-check');
             if (cb && cb.checked) currentState[cb.dataset.id] = item.querySelector('.mat-qty').value;
         });
@@ -274,7 +363,7 @@
                         <small class="mat-unit">${m.unit}</small>
                     </div>
                 `).join('');
-                document.querySelectorAll('.bom-item').forEach(item => {
+                document.querySelectorAll('#page-products .bom-item').forEach(item => {
                     const cb = item.querySelector('.mat-check');
                     if (currentState[cb.dataset.id] !== undefined) {
                         cb.checked = true;
@@ -305,30 +394,36 @@
         } catch (e) { console.error("載入材料失敗", e); }
     }
 
-    // 🌟 新增：載入並繪製已建立的品項表格
     async function loadProducts() {
         try {
             const res = await fetch(`${API_URL}/api/admin/products`);
             const result = await res.json();
-            const container = document.getElementById('productTableBody');
+            productsList = result.data; // 存入全域供編輯使用
             
-            if (result.data.length === 0) {
-                container.innerHTML = "<tr><td colspan='5' style='text-align: center;'>尚未建立任何品項。請在上方建檔！</td></tr>";
+            const container = document.getElementById('productTableBody');
+            if (productsList.length === 0) {
+                container.innerHTML = "<tr><td colspan='6' style='text-align: center;'>尚未建立任何品項。</td></tr>";
                 return;
             }
             
-            container.innerHTML = result.data.map(p => `
+            container.innerHTML = productsList.map(p => `
                 <tr>
                     <td style="font-weight: bold; color: var(--primary); font-size: 16px;">${p.name}</td>
                     <td style="font-weight: bold;">$${p.price}</td>
                     <td>$${p.total_cost}</td>
                     <td style="font-weight: bold; color: var(--success); font-size: 16px;">$${p.gross_profit}</td>
-                    <td style="font-size: 13px; color: var(--text); opacity: 0.8; line-height: 1.5;">${p.recipe_summary || '尚未設定配方'}</td>
+                    <td style="font-size: 13px; color: var(--text); opacity: 0.8; line-height: 1.5;">${p.recipe_summary || '無'}</td>
+                    <td style="text-align: right;">
+                        <button class="btn btn-theme" style="padding: 6px 12px; font-size: 13px;" onclick="openEditProductModal(${p.id})">✏️ 修改</button>
+                    </td>
                 </tr>
             `).join('');
         } catch (e) { console.error("載入品項失敗", e); }
     }
 
+    // ==========================================
+    // 📦 材料庫存編輯邏輯
+    // ==========================================
     function openEditModal(id, name, unit, cost, stock) {
         document.getElementById('editMatId').value = id; document.getElementById('editMatName').value = name;
         document.getElementById('editMatUnit').value = unit; document.getElementById('editMatCost').value = cost;
@@ -357,11 +452,89 @@
             if(result.status === 'success') {
                 closeEditModal();
                 await loadMaterials();
-                await loadProducts(); // 庫存成本改變，品項利潤也要重新計算顯示！
+                await loadProducts(); 
             } else alert(result.message);
-        } catch (e) { alert("修改失敗，請檢查網路！"); } finally { btn.textContent = originalText; }
+        } catch (e) { alert("修改失敗"); } finally { btn.textContent = originalText; }
     }
 
+    // ==========================================
+    // 🍔 品項與配方編輯邏輯 (全新)
+    // ==========================================
+    function openEditProductModal(productId) {
+        const product = productsList.find(p => p.id === productId);
+        if(!product) return;
+
+        document.getElementById('editProdId').value = product.id;
+        document.getElementById('editProdName').value = product.name;
+        document.getElementById('editProdPrice').value = product.price;
+
+        // 生成編輯用的 BOM 列表
+        const container = document.getElementById('editBomList');
+        container.innerHTML = materials.map(m => `
+            <div class="bom-item edit-bom-item">
+                <input type="checkbox" class="mat-check" data-id="${m.id}" data-cost="${m.unit_cost}" onchange="calculateEditRealTime()">
+                <span class="mat-name">${m.name}</span>
+                <input type="number" class="mat-qty" placeholder="用量" step="0.1" data-id="${m.id}" oninput="calculateEditRealTime()">
+                <small class="mat-unit">${m.unit}</small>
+            </div>
+        `).join('');
+
+        // 將該品項現有的配方打勾並填入數量
+        product.recipes.forEach(r => {
+            const item = [...document.querySelectorAll('.edit-bom-item')].find(el => parseInt(el.querySelector('.mat-check').dataset.id) === r.material_id);
+            if(item) {
+                item.querySelector('.mat-check').checked = true;
+                item.querySelector('.mat-qty').value = r.consume_qty;
+            }
+        });
+
+        calculateEditRealTime();
+        document.getElementById('editProductModal').classList.add('active');
+    }
+
+    function closeEditProductModal() { document.getElementById('editProductModal').classList.remove('active'); }
+
+    function calculateEditRealTime() {
+        let totalCost = 0; const price = parseFloat(document.getElementById('editProdPrice').value) || 0;
+        document.querySelectorAll('.edit-bom-item').forEach(item => {
+            const cb = item.querySelector('.mat-check');
+            if (cb.checked) totalCost += (parseFloat(cb.dataset.cost) * (parseFloat(item.querySelector('.mat-qty').value) || 0));
+        });
+        document.getElementById('editGrossProfit').textContent = `$${(price - totalCost).toFixed(2)}`;
+    }
+
+    async function submitEditProduct() {
+        const id = document.getElementById('editProdId').value;
+        const name = document.getElementById('editProdName').value.trim();
+        const price = parseInt(document.getElementById('editProdPrice').value);
+        if(!name) return alert("請輸入口味名稱！");
+
+        const recipes = [];
+        document.querySelectorAll('.edit-bom-item').forEach(item => {
+            const cb = item.querySelector('.mat-check');
+            if (cb.checked) recipes.push({ material_id: parseInt(cb.dataset.id), consume_qty: parseFloat(item.querySelector('.mat-qty').value) || 0 });
+        });
+        if(recipes.length === 0) return alert("請勾選至少一項配方！");
+        
+        const btn = document.querySelector('#editProductModal .btn-primary');
+        const originalText = btn.textContent; btn.textContent = "⏳ 儲存中...";
+
+        try {
+            const res = await fetch(`${API_URL}/api/admin/products/${id}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, price, recipes })
+            });
+            const result = await res.json();
+            if(result.status === 'success') {
+                closeEditProductModal();
+                await loadProducts(); // 更新表格
+            } else alert(result.message);
+        } catch (e) { alert("儲存失敗"); } finally { btn.textContent = originalText; }
+    }
+
+    // ==========================================
+    // 新增共用材料與產品邏輯
+    // ==========================================
     async function addMaterial(source) {
         const nameId = source === 'product' ? 'newMatName' : 'invMatName';
         const unitId = source === 'product' ? 'newMatUnit' : 'invMatUnit';
@@ -389,9 +562,9 @@
 
     function calculateRealTime() {
         let totalCost = 0; const price = parseFloat(document.getElementById('prodPrice').value) || 0;
-        document.querySelectorAll('.bom-item').forEach(item => {
-            const checkbox = item.querySelector('.mat-check');
-            if (checkbox.checked) totalCost += (parseFloat(checkbox.dataset.cost) * (parseFloat(item.querySelector('.mat-qty').value) || 0));
+        document.querySelectorAll('#page-products .bom-item').forEach(item => {
+            const cb = item.querySelector('.mat-check');
+            if (cb.checked) totalCost += (parseFloat(cb.dataset.cost) * (parseFloat(item.querySelector('.mat-qty').value) || 0));
         });
         document.getElementById('totalCost').textContent = `$${totalCost.toFixed(2)}`;
         document.getElementById('grossProfit').textContent = `$${(price - totalCost).toFixed(2)}`;
@@ -403,7 +576,7 @@
         if(!name) return alert("請輸入口味名稱！");
 
         const recipes = [];
-        document.querySelectorAll('.bom-item').forEach(item => {
+        document.querySelectorAll('#page-products .bom-item').forEach(item => {
             const cb = item.querySelector('.mat-check');
             if (cb.checked) recipes.push({ material_id: parseInt(cb.dataset.id), consume_qty: parseFloat(item.querySelector('.mat-qty').value) || 0 });
         });
@@ -418,16 +591,16 @@
             alert(result.message);
             if(result.status === 'success') {
                 document.getElementById('prodName').value = '';
-                document.querySelectorAll('.mat-check').forEach(cb => cb.checked = false);
-                document.querySelectorAll('.mat-qty').forEach(qty => qty.value = '');
+                document.querySelectorAll('#page-products .mat-check').forEach(cb => cb.checked = false);
+                document.querySelectorAll('#page-products .mat-qty').forEach(qty => qty.value = '');
                 calculateRealTime();
-                await loadProducts(); // 🌟 儲存後立即重新載入表格，展示剛建立的口味！
+                await loadProducts(); 
             }
         } catch (e) { alert("儲存失敗"); }
     }
 
-    // 🌟 網頁開啟時，同時載入「庫存清單」與「現有品項」
     window.onload = async () => {
+        initDragAndDrop(); // 啟動拖曳功能
         await loadMaterials();
         await loadProducts();
     };
