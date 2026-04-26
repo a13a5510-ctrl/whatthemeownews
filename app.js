@@ -96,7 +96,7 @@ function renderTableRows() {
     for (let i = 1; i <= 10; i++) {
         let rowHtml = `
             <tr id="row-${i}">
-                <td style="text-align: center;"><input type="checkbox" class="received-cb" style="width:24px; height:24px; cursor:pointer;" checked></td>
+                <td style="text-align: center;"><input type="checkbox" class="received-cb" style="width:24px; height:24px; cursor:pointer;"></td>
                 <td style="text-align: center; font-weight:bold; color:#64748b;">${String(i).padStart(2, '0')}</td>
         `;
         
