@@ -19,19 +19,22 @@ window.onload = async () => {
     initVirtualKeypad();            // 啟動虛擬鍵盤
 };
 
-// 顯示目前時間
+// 🌟 大師美化：高質感的日期與時間顯示
 function updateDateDisplay() {
     const now = new Date();
-    document.getElementById('dateDisplay').textContent = 
-        `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ` +
-        `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    const days = ['日', '一', '二', '三', '四', '五', '六'];
+    const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+    const dayStr = `星期${days[now.getDay()]}`;
+    const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    
+    document.getElementById('dateDisplay').innerHTML = `
+        🕒 ${dateStr} ${dayStr} <span style="color:#38bdf8; margin-left:8px; font-size:18px;">${timeStr}</span>
+    `;
 }
 
 // ==========================================
 // 2. 雲端資料同步區
 // ==========================================
-
-// 從大腦抓取菜單
 async function fetchProductsFromCloud() {
     try {
         document.getElementById('headerRow').innerHTML = "<th>連線至總部菜單中...</th>";
@@ -41,7 +44,7 @@ async function fetchProductsFromCloud() {
         if (result.status === 'success') {
             products = result.data;
             renderTableHeader();
-            renderTableRows(); // 預設產生 10 行填寫區
+            renderTableRows();
         } else {
             alert("載入菜單失敗，請檢查網路連線。");
         }
@@ -51,7 +54,6 @@ async function fetchProductsFromCloud() {
     }
 }
 
-// 從大腦抓取今日業績
 async function fetchTodayStats() {
     try {
         const res = await fetch(`${API_BASE_URL}/api/stats/today`);
@@ -68,8 +70,6 @@ async function fetchTodayStats() {
 // ==========================================
 // 3. 動態表格渲染與計算
 // ==========================================
-
-// 畫出表格標題 (依據抓到的口味)
 function renderTableHeader() {
     const tr = document.getElementById('headerRow');
     let html = `
@@ -88,7 +88,6 @@ function renderTableHeader() {
     tr.innerHTML = html;
 }
 
-// 畫出填寫的行數 (預設 10 行)
 function renderTableRows() {
     const tbody = document.getElementById('dataRowsBody');
     let html = "";
@@ -103,9 +102,9 @@ function renderTableRows() {
         products.forEach(p => {
             rowHtml += `
                 <td>
-                    <input type="text" class="qty-input" inputmode="none" 
+                    <input type="text" class="qty-input" inputmode="none" readonly
                            data-row="${i}" data-price="${p.price}" data-prod-id="${p.id}" 
-                           onfocus="setActiveInput(this)">
+                           onclick="setActiveInput(this)">
                 </td>
             `;
         });
@@ -121,9 +120,9 @@ function renderTableRows() {
         html += rowHtml;
     }
     tbody.innerHTML = html;
+    closeKeypad(); // 重置表格時關閉鍵盤
 }
 
-// 計算單行總額
 function calculateRowTotal(rowNum) {
     const inputs = document.querySelectorAll(`input[data-row="${rowNum}"]`);
     let total = 0;
@@ -133,27 +132,50 @@ function calculateRowTotal(rowNum) {
         total += (qty * price);
     });
     document.getElementById(`total-${rowNum}`).textContent = `$${total}`;
-    document.getElementById(`total-${rowNum}`).dataset.rawTotal = total; // 儲存純數字供結帳用
+    document.getElementById(`total-${rowNum}`).dataset.rawTotal = total;
 }
 
 // ==========================================
-// 4. 虛擬鍵盤邏輯
+// 4. 🌟 虛擬鍵盤邏輯 (修復顯示與隱藏)
 // ==========================================
 function setActiveInput(inputElement) {
-    // 移除其他人的 active 狀態
+    // 移除其他人的選取框
     document.querySelectorAll('.qty-input').forEach(el => el.style.borderColor = '#ccc');
     
     activeInput = inputElement;
     activeInput.style.borderColor = '#4f46e5';
+    
+    // 🌟 喚醒虛擬鍵盤
+    const keypad = document.getElementById('virtualKeypad');
+    keypad.style.display = 'block';
+    
+    // 讓畫面稍微往下捲動，確保鍵盤不會被擋住
+    setTimeout(() => {
+        keypad.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+}
+
+function closeKeypad() {
+    document.getElementById('virtualKeypad').style.display = 'none';
+    if(activeInput) {
+        activeInput.style.borderColor = '#ccc';
+        activeInput = null;
+    }
 }
 
 function initVirtualKeypad() {
     document.querySelectorAll('.keypad-button').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            if (!activeInput) return; // 沒有選取輸入框就不動作
-            
             const action = e.target.dataset.action;
             const value = e.target.dataset.value;
+            
+            // 如果按了完成，就收起鍵盤
+            if (action === 'done') {
+                closeKeypad();
+                return;
+            }
+
+            if (!activeInput) return; // 沒有選取輸入框就不動作
             let currentVal = activeInput.value;
 
             if (action === 'clear') {
@@ -161,15 +183,14 @@ function initVirtualKeypad() {
             } else if (action === 'back') {
                 activeInput.value = currentVal.slice(0, -1);
             } else if (value) {
-                // 如果是按 +10, +12 這種快速鍵，直接覆蓋
+                // 快速鍵直接取代，不然就接在後面
                 if (e.target.classList.contains('keypad-btn-quick')) {
-                    activeInput.value = value;
+                    activeInput.value = value.replace('+', ''); // 把 +10 變成 10
                 } else {
                     activeInput.value = currentVal + value;
                 }
             }
             
-            // 觸發計算
             calculateRowTotal(activeInput.dataset.row);
         });
     });
@@ -207,22 +228,18 @@ function confirmNote() {
 }
 
 // ==========================================
-// 6. 🚀 核心結帳邏輯：打包送往雲端總部
+// 6. 🚀 結帳邏輯
 // ==========================================
 async function submitOrders() {
     const payload = [];
     
-    // 掃描每一行
     for (let i = 1; i <= 10; i++) {
         const totalElem = document.getElementById(`total-${i}`);
         const rawTotal = parseInt(totalElem.dataset.rawTotal) || 0;
         
-        // 只要這行總額 > 0，就視為一筆有效訂單
         if (rawTotal > 0) {
             const isReceived = document.querySelector(`#row-${i} .received-cb`).checked;
             const note = document.getElementById(`noteVal-${i}`).value;
-            
-            // 將號碼牌加上日期前綴確保唯一性
             const orderNo = `D${new Date().getDate()}-${String(i).padStart(2,'0')}`;
             
             payload.push({
@@ -254,10 +271,9 @@ async function submitOrders() {
         const result = await res.json();
         
         if (result.status === 'success') {
-            // 結帳成功特效與重置
-            alert(`🎉 結帳成功！共送出 ${payload.length} 筆訂單至大腦！`);
-            renderTableRows();    // 清空表格準備下一輪
-            fetchTodayStats();    // 更新上方的營業額
+            alert(`🎉 結帳成功！共送出 ${payload.length} 筆訂單！`);
+            renderTableRows();    
+            fetchTodayStats();    
         } else {
             alert("❌ 結帳失敗：" + result.message);
         }
@@ -270,7 +286,7 @@ async function submitOrders() {
 }
 
 // ==========================================
-// 7. 計算機與深色模式功能 (保留原有)
+// 7. 計算機與深色模式功能
 // ==========================================
 function toggleCalculator() {
     const calc = document.getElementById('calculatorContainer');
