@@ -8,86 +8,122 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
-            --bg: #f0f4f8; --card: #ffffff; --text: #1e293b; --text-muted: #64748b;
+            --bg: #f1f5f9; --card: #ffffff; --text: #0f172a; --text-muted: #64748b;
             --primary: #4f46e5; --primary-hover: #4338ca;
-            --border: #e2e8f0; --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+            --border: #e2e8f0; --success: #10b981; --danger: #f43f5e; --warning: #f59e0b; --info: #0ea5e9;
         }
         [data-theme="dark"] { 
-            --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --text-muted: #94a3b8;
+            --bg: #0b1120; --card: #1e293b; --text: #f8fafc; --text-muted: #94a3b8;
             --primary: #6366f1; --primary-hover: #818cf8;
-            --border: #334155; --success: #34d399; --danger: #f87171; --warning: #fbbf24;
+            --border: #334155; --success: #34d399; --danger: #fb7185; --warning: #fbbf24; --info: #38bdf8;
         }
 
-        body { font-family: 'Nunito', 'Noto Sans TC', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 24px; transition: all 0.3s ease; min-height: 100vh; box-sizing: border-box; }
+        body { font-family: 'Nunito', 'Noto Sans TC', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 24px; transition: background-color 0.3s, color 0.3s; min-height: 100vh; box-sizing: border-box; }
 
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; background: var(--card); padding: 20px 32px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid var(--border); flex-wrap: wrap; gap: 16px;}
-        .header h1 { margin: 0; font-size: 24px; display: flex; align-items: center; gap: 10px; color: var(--primary); font-weight: 900; letter-spacing: 1px; }
-        .header-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        /* --- 頂級導航列 --- */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 20px 32px; border-radius: 20px; box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05); border: 1px solid var(--border); flex-wrap: wrap; gap: 16px;}
+        [data-theme="dark"] .header { background: rgba(30, 41, 59, 0.8); box-shadow: 0 4px 20px -2px rgba(0,0,0,0.4); }
+        
+        .header-title-wrapper { display: flex; flex-direction: column; gap: 4px; }
+        .header h1 { margin: 0; font-size: 26px; display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 900; letter-spacing: 1px; }
+        .live-clock { font-size: 14px; color: var(--text-muted); font-weight: 700; display: flex; align-items: center; gap: 6px; }
+        
+        .header-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center;}
 
-        .btn { padding: 10px 20px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+        /* --- 按鈕 --- */
+        .btn { padding: 10px 20px; border-radius: 12px; border: none; font-weight: 800; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; box-sizing: border-box;}
         .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4); }
-        .btn-theme { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
-        .btn-theme:hover { background: var(--border); }
-        
-        .btn-toggle-day { background: var(--warning); color: white; }
-        .btn-toggle-day:hover { transform: translateY(-2px); opacity: 0.9; }
+        .btn-theme { background: var(--card); color: var(--text); border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .btn-theme:hover { background: var(--bg); border-color: var(--text-muted); }
+        .btn-toggle-day { background: linear-gradient(135deg, var(--warning), #d97706); color: white; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);}
+        .btn-toggle-day:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4); }
 
-        .auto-refresh-toggle { display: flex; align-items: center; gap: 8px; background: var(--bg); padding: 6px 16px; border-radius: 50px; border: 1px solid var(--border); font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.3s;}
+        /* 同步開關 */
+        .auto-refresh-toggle { display: flex; align-items: center; gap: 8px; background: var(--card); padding: 8px 16px; border-radius: 50px; border: 1px solid var(--border); font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .auto-refresh-toggle.active { background: rgba(16, 185, 129, 0.1); border-color: var(--success); color: var(--success); }
         .dot { width: 10px; height: 10px; background: var(--text-muted); border-radius: 50%; transition: 0.3s; }
         .auto-refresh-toggle.active .dot { background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.8; } }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 32px; }
-        .stat-card { background: var(--card); padding: 24px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid var(--border); position: relative; overflow: hidden; transition: transform 0.3s ease; }
-        .stat-card:hover { transform: translateY(-5px); }
-        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; }
-        .stat-card:nth-child(1)::before { background-color: var(--primary); }
-        .stat-card:nth-child(2)::before { background-color: var(--success); }
-        .stat-card:nth-child(3)::before { background-color: var(--danger); }
-        .stat-card:nth-child(4)::before { background-color: var(--warning); }
+        /* --- 升級版數據卡片 (KPI Cards) --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-bottom: 32px; }
+        .stat-card { background: var(--card); padding: 24px; border-radius: 20px; box-shadow: 0 4px 15px -3px rgba(0,0,0,0.05); border: 1px solid var(--border); position: relative; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; display: flex; flex-direction: column; justify-content: space-between; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+        [data-theme="dark"] .stat-card:hover { box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
         
-        .stat-title { font-size: 14px; color: var(--text-muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-        .stat-value { font-size: 42px; font-weight: 900; margin: 0; line-height: 1.1; font-family: 'Nunito', sans-serif;}
+        /* 卡片頂部裝飾線 */
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; opacity: 0.9;}
+        .stat-card:nth-child(1)::before { background: linear-gradient(90deg, var(--primary), #818cf8); }
+        .stat-card:nth-child(2)::before { background: linear-gradient(90deg, var(--success), #6ee7b7); }
+        .stat-card:nth-child(3)::before { background: linear-gradient(90deg, var(--danger), #fda4af); }
+        .stat-card:nth-child(4)::before { background: linear-gradient(90deg, var(--warning), #fcd34d); }
+        .stat-card:nth-child(5)::before { background: linear-gradient(90deg, var(--info), #7dd3fc); } /* 新增的客單價卡片 */
+
+        /* 卡片背景浮水印 */
+        .stat-icon-bg { position: absolute; right: -10px; bottom: -20px; font-size: 100px; opacity: 0.03; z-index: 0; pointer-events: none; }
+        [data-theme="dark"] .stat-icon-bg { opacity: 0.02; }
+
+        .stat-title { font-size: 14px; color: var(--text-muted); margin-bottom: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; position: relative; z-index: 1;}
+        .stat-value { font-size: 42px; font-weight: 900; margin: 0; line-height: 1.1; font-family: 'Nunito', sans-serif; position: relative; z-index: 1;}
+        
+        /* 數據顏色與發光 (Dark Mode) */
         .stat-card:nth-child(1) .stat-value { color: var(--primary); }
         .stat-card:nth-child(2) .stat-value { color: var(--success); }
         .stat-card:nth-child(3) .stat-value { color: var(--danger); }
         .stat-card:nth-child(4) .stat-value { color: var(--warning); }
+        .stat-card:nth-child(5) .stat-value { color: var(--info); }
+        [data-theme="dark"] .stat-card:nth-child(1) .stat-value { text-shadow: 0 0 15px rgba(99,102,241,0.4); }
+        [data-theme="dark"] .stat-card:nth-child(2) .stat-value { text-shadow: 0 0 15px rgba(52,211,153,0.4); }
+        [data-theme="dark"] .stat-card:nth-child(3) .stat-value { text-shadow: 0 0 15px rgba(244,63,94,0.4); }
+        [data-theme="dark"] .stat-card:nth-child(4) .stat-value { text-shadow: 0 0 15px rgba(251,191,36,0.4); }
+        [data-theme="dark"] .stat-card:nth-child(5) .stat-value { text-shadow: 0 0 15px rgba(14,165,233,0.4); }
 
+        /* --- 內容佈局 --- */
         .content-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; }
-        .panel { background: var(--card); padding: 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .panel h2 { margin-top: 0; font-size: 18px; color: var(--text); margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .panel { background: var(--card); padding: 24px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 4px 15px -3px rgba(0,0,0,0.05); }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px;}
+        .panel h2 { margin: 0; font-size: 18px; color: var(--text); font-weight: 900; }
 
-        .table-responsive { width: 100%; overflow-x: auto; max-height: 400px; overflow-y: auto; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; min-width: 600px;}
-        th { background: var(--bg); color: var(--text-muted); font-weight: 800; padding: 14px 16px; position: sticky; top: 0; z-index: 10; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border);}
-        td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 15px; color: var(--text); font-weight: 600;}
+        /* --- 表格樣式 --- */
+        .table-responsive { width: 100%; overflow-x: auto; max-height: 400px; overflow-y: auto; border-radius: 12px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; min-width: 600px;}
+        th { background: var(--bg); color: var(--text-muted); font-weight: 800; padding: 16px; position: sticky; top: 0; z-index: 10; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border);}
+        td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 15px; color: var(--text); font-weight: 700;}
         tr:last-child td { border-bottom: none; }
-        tr:hover { background: rgba(79, 70, 229, 0.03); }
+        tr:hover td { background: rgba(99, 102, 241, 0.05); }
 
-        .badge { padding: 6px 12px; border-radius: 30px; font-size: 12px; font-weight: 800; display: inline-block; text-align: center; min-width: 60px; letter-spacing: 0.5px;}
-        .badge.paid { background-color: rgba(16, 185, 129, 0.15); color: var(--success); }
-        .badge.unpaid { background-color: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .badge { padding: 6px 12px; border-radius: 30px; font-size: 12px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; min-width: 70px; letter-spacing: 0.5px;}
+        .badge.paid { background-color: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3);}
+        .badge.unpaid { background-color: rgba(244, 63, 94, 0.15); color: var(--danger); border: 1px solid rgba(244, 63, 94, 0.3);}
 
+        /* 滾動條美化 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 10px; opacity: 0.5; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        /* =========================================
+           自動適應 (RWD) & 手機預覽模式
+           ========================================= */
         @media (max-width: 1024px) { .content-grid { grid-template-columns: 1fr; } }
         @media (max-width: 768px) {
             body { padding: 16px; }
-            .header { padding: 16px; flex-direction: column; align-items: flex-start; gap: 16px; }
+            .header { padding: 16px; flex-direction: column; align-items: flex-start; gap: 16px; border-radius: 16px;}
             .header-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-            .header-actions .btn, .header-actions .auto-refresh-toggle { justify-content: center; width: 100%; box-sizing: border-box;}
+            .header-actions .btn, .header-actions .auto-refresh-toggle { justify-content: center; width: 100%; }
             .stats-grid { grid-template-columns: 1fr 1fr; gap: 16px;}
             .stat-value { font-size: 32px; }
             .panel { padding: 16px; }
         }
 
-        body.simulate-mobile { max-width: 393px; margin: 0 auto; border-left: 1px solid var(--border); border-right: 1px solid var(--border); box-shadow: 0 0 30px rgba(0,0,0,0.15); padding: 16px; }
-        body.simulate-mobile .header { padding: 16px; flex-direction: column; align-items: flex-start; gap: 16px; }
+        body.simulate-mobile { max-width: 414px; margin: 0 auto; border-left: 1px solid var(--border); border-right: 1px solid var(--border); box-shadow: 0 0 40px rgba(0,0,0,0.2); padding: 16px; }
+        body.simulate-mobile .header { padding: 16px; flex-direction: column; align-items: flex-start; gap: 16px; border-radius: 16px;}
         body.simulate-mobile .header h1 { font-size: 20px; }
         body.simulate-mobile .header-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        body.simulate-mobile .header-actions .btn, body.simulate-mobile .header-actions .auto-refresh-toggle { justify-content: center; width: 100%; padding: 10px 4px; font-size: 12px;}
+        body.simulate-mobile .header-actions .btn, body.simulate-mobile .header-actions .auto-refresh-toggle { justify-content: center; width: 100%; padding: 10px 4px; font-size: 13px;}
         body.simulate-mobile .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-        body.simulate-mobile .stat-card { padding: 16px; }
+        body.simulate-mobile .stat-card { padding: 16px; border-radius: 16px;}
         body.simulate-mobile .stat-title { font-size: 12px; }
         body.simulate-mobile .stat-value { font-size: 24px; }
         body.simulate-mobile .content-grid { grid-template-columns: 1fr; gap: 16px;}
@@ -96,52 +132,70 @@
 </head>
 <body>
 
-    <div class="header">
-        <h1 id="pageTitle">📊 喵逮雞 營運戰情室 (今日)</h1>
+    <div class="header" id="mainHeader">
+        <div class="header-title-wrapper">
+            <h1 id="pageTitle">📊 喵逮雞 營運戰情室</h1>
+            <div class="live-clock">
+                <span id="currentDate">載入中...</span>
+                <span id="currentTime" style="color: var(--primary); font-weight: 900; font-size: 16px;"></span>
+                <span id="viewBadge" style="margin-left:8px; padding: 2px 8px; background: var(--warning); color: white; border-radius: 10px; font-size: 11px; display: none;">昨日模式</span>
+            </div>
+        </div>
         <div class="header-actions">
             <button class="btn btn-toggle-day" id="dayToggleBtn" onclick="toggleDayView()">📅 查看昨日</button>
-            
-            <div class="auto-refresh-toggle" id="autoRefreshBtn" onclick="toggleAutoRefresh()">
+            <div class="auto-refresh-toggle" id="autoRefreshBtn" onclick="toggleAutoRefresh()" title="開啟後每30秒自動更新">
                 <div class="dot"></div> <span id="autoRefreshText">手動同步</span>
             </div>
             <button class="btn btn-primary" id="manualSyncBtn" onclick="fetchDashboardData()">🔄 立即同步</button>
             <button class="btn btn-theme" id="mobileToggleBtn" onclick="toggleMobileView()">📱 手機預覽</button>
-            <button class="btn btn-theme" onclick="toggleTheme()">🌓 切換模式</button>
+            <button class="btn btn-theme" id="fullscreenBtn" onclick="toggleFullScreen()">🖥️ 全螢幕放映</button>
+            <button class="btn btn-theme" onclick="toggleTheme()" title="深/淺色模式切換">🌓</button>
         </div>
     </div>
 
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-title">📝 訂單總數</div>
+            <div class="stat-icon-bg">📝</div>
+            <div class="stat-title">訂單總數</div>
             <div class="stat-value" id="val-orders">0</div>
         </div>
         <div class="stat-card">
-            <div class="stat-title">💰 實收現金 (已結帳)</div>
+            <div class="stat-icon-bg">💰</div>
+            <div class="stat-title">實收現金 (已結帳)</div>
             <div class="stat-value" id="val-received">$0</div>
         </div>
         <div class="stat-card">
-            <div class="stat-title">⚠️ 待收呆帳 (未結帳)</div>
+            <div class="stat-icon-bg">⚠️</div>
+            <div class="stat-title">待收呆帳 (未結帳)</div>
             <div class="stat-value" id="val-unpaid">$0</div>
         </div>
         <div class="stat-card">
-            <div class="stat-title">🔥 預估總營業額</div>
+            <div class="stat-icon-bg">🔥</div>
+            <div class="stat-title">總營業額</div>
             <div class="stat-value" id="val-total">$0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon-bg">🛍️</div>
+            <div class="stat-title">平均客單價 (AOV)</div>
+            <div class="stat-value" id="val-aov">$0</div>
         </div>
     </div>
 
     <div class="content-grid">
         <div class="panel">
-            <h2>🍩 營收結構</h2>
-            <div style="position: relative; height:300px; width:100%; display: flex; justify-content: center;">
+            <div class="panel-header">
+                <h2>🍩 營收結構</h2>
+            </div>
+            <div style="position: relative; height:320px; width:100%; display: flex; justify-content: center;">
                 <canvas id="revenueChart"></canvas>
             </div>
         </div>
 
         <div class="panel">
-            <h2>
-                📃 訂單動態明細
-                <button class="btn btn-theme" style="padding: 6px 12px; font-size: 12px;" onclick="exportTableToCSV()">📥 匯出 Excel</button>
-            </h2>
+            <div class="panel-header">
+                <h2>📃 訂單動態明細</h2>
+                <button class="btn btn-theme" style="padding: 6px 12px; font-size: 13px;" onclick="exportTableToCSV()">📥 匯出 Excel</button>
+            </div>
             <div class="table-responsive">
                 <table>
                     <thead>
@@ -149,12 +203,12 @@
                             <th>時間</th>
                             <th>號碼牌</th>
                             <th>金額</th>
-                            <th>結帳狀態</th>
+                            <th style="text-align: center;">結帳狀態</th>
                             <th>備註/需求</th>
                         </tr>
                     </thead>
                     <tbody id="order-table-body">
-                        <tr><td colspan="5" style="text-align: center; padding: 40px;">正在與總部伺服器連線...</td></tr>
+                        <tr><td colspan="5" style="text-align: center; padding: 60px; color: var(--text-muted);">正在與總部伺服器連線...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -166,27 +220,37 @@
         let revenueChartInstance = null;
         let autoRefreshInterval = null;
         let isAutoRefreshOn = false;
-        
-        // 🌟 核心：記錄目前觀看的日期模式 ('today' 或 'yesterday')
         let currentView = 'today'; 
+
+        // 🌟 即時時鐘邏輯
+        function updateClock() {
+            const now = new Date();
+            const days = ['日', '一', '二', '三', '四', '五', '六'];
+            document.getElementById('currentDate').textContent = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} (星期${days[now.getDay()]})`;
+            document.getElementById('currentTime').textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
 
         function formatTime(isoString) {
             const date = new Date(isoString);
-            return date.toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+            return `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
         }
 
-        // --- 🌟 切換日期模式 ---
+        // --- UI 切換邏輯 ---
         function toggleDayView() {
+            const badge = document.getElementById('viewBadge');
             if (currentView === 'today') {
                 currentView = 'yesterday';
                 document.getElementById('dayToggleBtn').textContent = '📅 返回今日';
-                document.getElementById('pageTitle').textContent = '📊 喵逮雞 營運戰情室 (昨日)';
+                document.getElementById('pageTitle').textContent = '📊 喵逮雞 營運戰情室';
+                badge.style.display = 'inline-block';
             } else {
                 currentView = 'today';
                 document.getElementById('dayToggleBtn').textContent = '📅 查看昨日';
-                document.getElementById('pageTitle').textContent = '📊 喵逮雞 營運戰情室 (今日)';
+                badge.style.display = 'none';
             }
-            fetchDashboardData(); // 切換後立刻去抓資料
+            fetchDashboardData(); 
         }
 
         function toggleTheme() {
@@ -202,6 +266,23 @@
             document.body.classList.toggle('simulate-mobile');
             document.getElementById('mobileToggleBtn').textContent = document.body.classList.contains('simulate-mobile') ? '💻 電腦模式' : '📱 手機預覽';
             if(revenueChartInstance) revenueChartInstance.resize();
+        }
+
+        // 🌟 全螢幕放映模式
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+                document.getElementById('fullscreenBtn').textContent = '🖥️ 退出全螢幕';
+                document.getElementById('mainHeader').style.borderRadius = '0';
+                document.getElementById('mainHeader').style.borderTop = 'none';
+                document.getElementById('mainHeader').style.borderLeft = 'none';
+                document.getElementById('mainHeader').style.borderRight = 'none';
+            } else {
+                document.exitFullscreen();
+                document.getElementById('fullscreenBtn').textContent = '🖥️ 全螢幕放映';
+                document.getElementById('mainHeader').style.borderRadius = '20px';
+                document.getElementById('mainHeader').style.border = '1px solid var(--border)';
+            }
         }
 
         function toggleAutoRefresh() {
@@ -221,6 +302,7 @@
             }
         }
 
+        // 數字跳動動畫
         function animateValue(obj, start, end, duration) {
             let startTimestamp = null;
             const step = (timestamp) => {
@@ -235,13 +317,13 @@
             window.requestAnimationFrame(step);
         }
 
+        // --- 核心資料拉取 ---
         async function fetchDashboardData() {
             const syncBtn = document.getElementById('manualSyncBtn');
             const originalText = syncBtn.innerHTML;
-            syncBtn.innerHTML = `⏳ 抓取中...`;
+            syncBtn.innerHTML = `⏳ 同步中...`;
             
             try {
-                // 🌟 根據目前的 currentView，決定要呼叫哪個 API 通道
                 const statsEndpoint = currentView === 'today' ? '/api/stats/today' : '/api/stats/yesterday';
                 const ordersEndpoint = currentView === 'today' ? '/api/orders/today' : '/api/orders/yesterday';
 
@@ -257,11 +339,16 @@
                     const data = statsResult.data;
                     const total = data.revenue_received + data.revenue_unpaid;
                     const getVal = (id) => parseInt(document.getElementById(id).textContent.replace(/[^0-9]/g, '')) || 0;
+                    
+                    // 🌟 計算客單價 AOV
+                    const aov = data.total_orders_count > 0 ? Math.round(total / data.total_orders_count) : 0;
 
                     animateValue(document.getElementById('val-orders'), getVal('val-orders'), data.total_orders_count, 1000);
                     animateValue(document.getElementById('val-received'), getVal('val-received'), data.revenue_received, 1000);
                     animateValue(document.getElementById('val-unpaid'), getVal('val-unpaid'), data.revenue_unpaid, 1000);
                     animateValue(document.getElementById('val-total'), getVal('val-total'), total, 1000);
+                    animateValue(document.getElementById('val-aov'), getVal('val-aov'), aov, 1000);
+                    
                     updateChart(data);
                 }
 
@@ -269,14 +356,14 @@
                     const tbody = document.getElementById('order-table-body');
                     if (ordersResult.data.length === 0) {
                         const emptyMsg = currentView === 'today' ? '今日尚無訂單，準備開市！' : '昨日沒有訂單紀錄。';
-                        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 30px; opacity:0.6;">${emptyMsg}</td></tr>`;
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 60px; color: var(--text-muted); font-size: 16px;">☕ ${emptyMsg}</td></tr>`;
                     } else {
                         tbody.innerHTML = ordersResult.data.map(order => `
                             <tr>
-                                <td style="color: var(--text-muted);">${formatTime(order.created_at)}</td>
-                                <td><strong style="font-size:16px;">#${order.order_no}</strong></td>
-                                <td><strong style="color: var(--text);">$${order.total_amount.toLocaleString()}</strong></td>
-                                <td>${order.received ? '<span class="badge paid">已結帳</span>' : '<span class="badge unpaid">待結帳</span>'}</td>
+                                <td style="color: var(--text-muted); font-weight: 800;">${formatTime(order.created_at)}</td>
+                                <td><strong style="font-size:16px; color: var(--primary);">#${order.order_no}</strong></td>
+                                <td><strong style="font-size:16px;">$${order.total_amount.toLocaleString()}</strong></td>
+                                <td style="text-align: center;">${order.received ? '<span class="badge paid">✅ 已收現</span>' : '<span class="badge unpaid">⏳ 待結帳</span>'}</td>
                                 <td style="color: var(--text-muted); font-size: 14px;">${order.note || '-'}</td>
                             </tr>
                         `).join('');
@@ -289,6 +376,7 @@
             }
         }
 
+        // --- 圓餅圖繪製 ---
         function updateChart(data) {
             const ctx = document.getElementById('revenueChart').getContext('2d');
             const hasData = data.revenue_received > 0 || data.revenue_unpaid > 0;
@@ -298,15 +386,22 @@
 
             if (revenueChartInstance) revenueChartInstance.destroy();
 
+            // 漸層色設定
+            let gradientReceived = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientReceived.addColorStop(0, '#34d399'); gradientReceived.addColorStop(1, '#059669');
+            let gradientUnpaid = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientUnpaid.addColorStop(0, '#fb7185'); gradientUnpaid.addColorStop(1, '#e11d48');
+
             revenueChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: hasData ? ['已收現金', '未收呆帳'] : ['尚無營收'],
                     datasets: [{
                         data: hasData ? [data.revenue_received, data.revenue_unpaid] : [1],
-                        backgroundColor: hasData ? ['#10b981', '#ef4444'] : [emptyColor],
+                        backgroundColor: hasData ? [gradientReceived, gradientUnpaid] : [emptyColor],
                         borderWidth: 0,
-                        hoverOffset: 6
+                        hoverOffset: 10,
+                        borderRadius: hasData ? 5 : 0 // 甜甜圈邊角微圓
                     }]
                 },
                 options: {
@@ -314,31 +409,28 @@
                     maintainAspectRatio: false,
                     cutout: '75%', 
                     plugins: {
-                        legend: { position: 'bottom', labels: { padding: 20, font: { family: "'Nunito', sans-serif", size: 13, weight: 'bold' } } },
-                        tooltip: { callbacks: { label: function(context) { return hasData ? ` $${context.raw.toLocaleString()}` : ' $0'; } } }
+                        legend: { position: 'bottom', labels: { padding: 25, usePointStyle: true, font: { family: "'Nunito', sans-serif", size: 14, weight: 'bold' } } },
+                        tooltip: { backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff', titleColor: theme === 'dark' ? '#f8fafc' : '#0f172a', bodyColor: theme === 'dark' ? '#f8fafc' : '#0f172a', borderColor: '#e2e8f0', borderWidth: 1, padding: 12, boxPadding: 6, callbacks: { label: function(context) { return hasData ? ` $${context.raw.toLocaleString()}` : ' $0'; } } }
                     }
                 }
             });
         }
 
+        // --- 匯出 CSV ---
         function exportTableToCSV() {
-            // 自動加上日期標籤
             const dateStr = currentView === 'today' ? '今日' : '昨日';
             const filename = `喵逮雞_${dateStr}訂單報表.csv`;
-
             const rows = document.querySelectorAll("table tr");
             let csv = [];
             for (let i = 0; i < rows.length; i++) {
                 let row = [], cols = rows[i].querySelectorAll("td, th");
                 if(cols.length === 1) continue; 
-                
                 for (let j = 0; j < cols.length; j++) {
                     let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/,/g, "，");
                     row.push('"' + data + '"');
                 }
                 csv.push(row.join(","));
             }
-            
             let csvFile = new Blob(["\uFEFF" + csv.join("\n")], {type: "text/csv;charset=utf-8;"});
             let downloadLink = document.createElement("a");
             downloadLink.download = filename;
