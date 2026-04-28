@@ -9,87 +9,62 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#3f51b5" id="theme-color-meta">
     <link rel="apple-touch-icon" href="https://via.placeholder.com/192/3f51b5/FFFFFF?text=Miao">
-    <title>喵逮雞 POS 系統 (雲端版)</title>
+    <title>喵逮雞 POS 系統 (旗艦版)</title>
     
     <link rel="stylesheet" href="style.css">
     
     <style>
+        /* 🌟 大師深色模式強制覆蓋 */
+        [data-theme="dark"] { background-color: #0f172a !important; color: #f8fafc !important; }
+        [data-theme="dark"] .header-section, [data-theme="dark"] .table-container, [data-theme="dark"] .pagination { background-color: #1e293b !important; border-color: #334155 !important; }
+        [data-theme="dark"] .qty-input { background: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+        [data-theme="dark"] .keypad { background: #1e293b !important; border-color: #334155 !important; }
+        [data-theme="dark"] .keypad-button { background: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+        [data-theme="dark"] th, [data-theme="dark"] td { border-color: #334155 !important; color: #f8fafc !important; }
+        [data-theme="dark"] .dash-item { background: #0f172a !important; border-color: #334155 !important; }
+
         .th-price { display: block; font-size: 12px; opacity: 0.7; font-weight: normal; margin-top: 2px;}
         .qty-input { width: 100%; height: 40px; text-align: center; font-size: 18px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; background: #fff;}
         .qty-input:focus { outline: 2px solid #4f46e5; background: #eef2ff;}
-        .row-total { font-weight: bold; color: #e11d48; font-size: 18px; text-align: center;}
+        
+        /* 🌟 總額按鈕樣式，加入點擊提示 */
+        .row-total { font-weight: bold; color: #e11d48; font-size: 18px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none;}
+        .row-total:hover { background: #ffe4e6; border-radius: 8px;}
+        [data-theme="dark"] .row-total { color: #f43f5e; }
+        [data-theme="dark"] .row-total:hover { background: #4c1d95; }
+
         .note-btn { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; cursor: pointer; width: 100%;}
         .note-btn:hover { background: #e2e8f0; }
         .note-btn.has-note { background: #fef08a; border-color: #eab308; }
         
         #checkoutBtn {
-            background: linear-gradient(135deg, #10b981, #059669); color: white;
-            border: none; padding: 12px 30px; border-radius: 8px; font-size: 18px;
-            font-weight: 900; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-            flex-grow: 1; margin: 0 10px;
+            background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 18px; font-weight: 900; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); flex-grow: 1; margin: 0 10px;
         }
         #checkoutBtn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6); }
-        #checkoutBtn:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; transform: none; }
 
-        /* 🌟 大師美化：頂級時間顯示膠囊 */
-        .date-display {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            color: #f8fafc;
-            padding: 8px 20px;
-            border-radius: 50px;
-            font-family: 'Noto Sans TC', sans-serif;
-            font-weight: 700;
-            font-size: 16px;
-            display: inline-flex;
-            align-items: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            border: 1px solid #334155;
-            letter-spacing: 0.5px;
-        }
-
-        /* 🌟 大師修正：頂級虛擬鍵盤樣式 */
-        .keypad {
-            display: none; /* 預設隱藏，點擊輸入框才顯示 */
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 16px;
-            margin-top: 16px;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
-            animation: slideUp 0.3s ease;
-        }
-        .keypad-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-        }
-        .keypad-button {
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            padding: 16px 0;
-            font-size: 22px;
-            font-weight: 900;
-            text-align: center;
-            color: #1e293b;
-            cursor: pointer;
-            transition: 0.1s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            user-select: none;
-        }
+        .date-display { background: linear-gradient(135deg, #1e293b, #0f172a); color: #f8fafc; padding: 8px 20px; border-radius: 50px; font-family: 'Noto Sans TC', sans-serif; font-weight: 700; font-size: 16px; display: inline-flex; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 1px solid #334155; }
+        
+        .keypad { display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; margin-top: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); animation: slideUp 0.3s ease; }
+        .keypad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .keypad-button { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px 0; font-size: 22px; font-weight: 900; text-align: center; color: #1e293b; cursor: pointer; transition: 0.1s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); user-select: none; }
         .keypad-button:active { background: #e2e8f0; transform: scale(0.95); }
         .keypad-btn-quick { background: #e0e7ff; color: #4f46e5; border-color: #c7d2fe; font-size: 18px;}
         .keypad-btn-back { background: #fee2e2; color: #ef4444; border-color: #fecaca; }
         .keypad-action-clear { background: #f1f5f9; color: #64748b; font-size: 16px; grid-column: span 2;}
         .keypad-action-done { background: #10b981; color: white; border-color: #059669; grid-column: span 2; font-size: 18px;}
         @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 🌟 找零提示彈出框 (Toast) */
+        #toast {
+            visibility: hidden; min-width: 250px; background-color: #1e293b; color: #fff; text-align: center; border-radius: 50px; padding: 16px 24px; position: fixed; z-index: 10000; left: 50%; top: 30px; transform: translateX(-50%); font-size: 22px; font-weight: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 2px solid #4f46e5;
+        }
+        #toast.show { visibility: visible; animation: fadein 0.3s, fadeout 0.4s 2.5s; }
+        @keyframes fadein { from {top: 0; opacity: 0;} to {top: 30px; opacity: 1;} }
+        @keyframes fadeout { from {top: 30px; opacity: 1;} to {top: 0; opacity: 0;} }
     </style>
 </head>
-<body>
-    <button onclick="window.location.reload(true)" style="position: fixed; bottom: 24px; left: 24px; z-index: 9999; background: linear-gradient(135deg, #4f46e5, #4338ca); color: white; border: none; padding: 12px 24px; border-radius: 50px; font-size: 16px; font-weight: 900; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4); cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: 'Noto Sans TC', sans-serif;">
-        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform: scaleX(-1);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-        更新菜單
-    </button>
+<body data-theme="light">
+    <div id="toast"></div>
 
     <div id="alarmModal" class="modal-base">
         <div class="alarm-card">
@@ -118,19 +93,19 @@
                 <div class="dash-value" id="dashCount">0</div>
             </div>
             <div class="dash-item">
-                <div class="dash-label">💰 今日營業額</div>
+                <div class="dash-label">💰 今日總額 (含未結帳)</div>
                 <div class="dash-value" id="dashTotal">$0</div>
             </div>
         </div>
 
-        <div class="form-header">
+        <div class="form-header" style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
             <div class="date-display" id="dateDisplay">載入時間中...</div>
-            <div class="store-name">喵逮雞EGG燒燒</div>
+            <img src="./IMG_1673.PNG" alt="喵逮雞Logo" style="height: 80px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">
         </div>
         
         <div class="tools-bar">
             <button class="tool-btn btn-calc" onclick="toggleCalculator()">🧮 計算機</button>
-            <button id="fullScreenBtn" class="tool-btn btn-full" onclick="toggleFullScreen()">[ 全螢幕 ]</button>
+            <button class="tool-btn" style="background: linear-gradient(135deg, #4f46e5, #4338ca); color: white; border: none; font-weight: bold;" onclick="window.location.reload(true)">🔄 更新菜單</button>
             <button class="tool-btn btn-theme" onclick="toggleTheme()" id="themeBtn">[ 深色模式 ]</button>
         </div>
         
@@ -196,7 +171,7 @@
     </div>
 
     <div class="pagination" style="display: flex; justify-content: space-between; padding: 20px; background: #fff; border-top: 1px solid #e2e8f0;">
-        <button id="clearAllBtn" class="pagination-button" style="background: #f1f5f9; color: #64748b;" onclick="renderTableRows()">🗑️ 清空整頁</button>
+        <button id="clearAllBtn" class="pagination-button" style="background: #f1f5f9; color: #64748b;" onclick="resetTable()">🗑️ 清空重來</button>
         <button id="checkoutBtn" class="pagination-button" onclick="submitOrders()">
             <span id="checkoutButtonText">🚀 結帳並傳送至總部</span>
         </button>
