@@ -30,6 +30,59 @@
         }
         #checkoutBtn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6); }
         #checkoutBtn:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        /* 🌟 大師美化：頂級時間顯示膠囊 */
+        .date-display {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: #f8fafc;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            border: 1px solid #334155;
+            letter-spacing: 0.5px;
+        }
+
+        /* 🌟 大師修正：頂級虛擬鍵盤樣式 */
+        .keypad {
+            display: none; /* 預設隱藏，點擊輸入框才顯示 */
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            animation: slideUp 0.3s ease;
+        }
+        .keypad-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .keypad-button {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 16px 0;
+            font-size: 22px;
+            font-weight: 900;
+            text-align: center;
+            color: #1e293b;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            user-select: none;
+        }
+        .keypad-button:active { background: #e2e8f0; transform: scale(0.95); }
+        .keypad-btn-quick { background: #e0e7ff; color: #4f46e5; border-color: #c7d2fe; font-size: 18px;}
+        .keypad-btn-back { background: #fee2e2; color: #ef4444; border-color: #fecaca; }
+        .keypad-action-clear { background: #f1f5f9; color: #64748b; font-size: 16px; grid-column: span 2;}
+        .keypad-action-done { background: #10b981; color: white; border-color: #059669; grid-column: span 2; font-size: 18px;}
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -71,7 +124,7 @@
         </div>
 
         <div class="form-header">
-            <div class="date-display" id="dateDisplay"></div>
+            <div class="date-display" id="dateDisplay">載入時間中...</div>
             <div class="store-name">喵逮雞EGG燒燒</div>
         </div>
         
@@ -109,12 +162,9 @@
     <div class="table-container">
         <table class="data-table">
             <thead>
-                <tr id="headerRow">
-                    <th>載入中...</th>
-                </tr>
+                <tr id="headerRow"><th>載入中...</th></tr>
             </thead>
-            <tbody id="dataRowsBody">
-                </tbody>
+            <tbody id="dataRowsBody"></tbody>
         </table>
 
         <div class="keypad" id="virtualKeypad">
@@ -122,26 +172,31 @@
                 <div class="keypad-button" data-value="7">7</div>
                 <div class="keypad-button" data-value="8">8</div>
                 <div class="keypad-button" data-value="9">9</div>
-                <div class="keypad-button keypad-btn-quick" data-value="10">10</div>
+                <div class="keypad-button keypad-btn-quick" data-value="10">+10</div>
+                
                 <div class="keypad-button" data-value="4">4</div>
                 <div class="keypad-button" data-value="5">5</div>
                 <div class="keypad-button" data-value="6">6</div>
-                <div class="keypad-button keypad-btn-quick" data-value="12">12</div>
+                <div class="keypad-button keypad-btn-quick" data-value="12">+12</div>
+                
                 <div class="keypad-button" data-value="1">1</div>
                 <div class="keypad-button" data-value="2">2</div>
                 <div class="keypad-button" data-value="3">3</div>
-                <div class="keypad-button keypad-btn-quick" data-value="15">15</div>
+                <div class="keypad-button keypad-btn-quick" data-value="15">+15</div>
+                
                 <div class="keypad-button" data-value="0">0</div>
                 <div class="keypad-button" data-value="00">00</div>
                 <div class="keypad-button keypad-btn-back" data-action="back">⌫</div>
-                <div class="keypad-button keypad-btn-quick" data-value="20">20</div>
-                <div class="keypad-action-clear keypad-button" data-action="clear" style="grid-column: span 4;">清空此格</div>
+                <div class="keypad-button keypad-btn-quick" data-value="20">+20</div>
+                
+                <div class="keypad-button keypad-action-clear" data-action="clear">🗑️ 清空此格</div>
+                <div class="keypad-button keypad-action-done" data-action="done">✅ 完成</div>
             </div>
         </div>
     </div>
 
     <div class="pagination" style="display: flex; justify-content: space-between; padding: 20px; background: #fff; border-top: 1px solid #e2e8f0;">
-        <button id="clearAllBtn" class="pagination-button" style="background: #f1f5f9; color: #64748b;" onclick="renderTableRows()">🗑️ 清空表格</button>
+        <button id="clearAllBtn" class="pagination-button" style="background: #f1f5f9; color: #64748b;" onclick="renderTableRows()">🗑️ 清空整頁</button>
         <button id="checkoutBtn" class="pagination-button" onclick="submitOrders()">
             <span id="checkoutButtonText">🚀 結帳並傳送至總部</span>
         </button>
