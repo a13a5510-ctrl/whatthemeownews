@@ -8,7 +8,7 @@ let activeInput = null;
 let currentNoteRow = null;
 let currentRowCount = 10; 
 let baseServerReceived = 0; 
-let speechRecognition = null; // 語音辨識器
+let speechRecognition = null; 
 
 // ==========================================
 // 1. 系統初始化
@@ -94,12 +94,12 @@ function renderTableHeader() {
     products.forEach(p => {
         html += `<th style="text-align: center;">${p.name}<span class="th-price">(${p.price})</span></th>`;
     });
-    // 🌟 修復：拿掉 (點算找零) 輔助說明
-    html += `<th style="width: 80px; text-align: center;">總額</th><th style="width: 80px; text-align: center;">備註</th>`;
+    // 🌟 配合雙按鈕，稍微加寬最後一格
+    html += `<th style="width: 80px; text-align: center;">總額</th><th style="width: 100px; text-align: center;">語音/備註</th>`;
     tr.innerHTML = html;
 }
 
-// 🌟 長按清空邏輯 (Long Press 2 seconds)
+// 長按清空邏輯
 let pressTimer;
 function startLongPress(rowNum, element) {
     element.classList.add('pressing');
@@ -118,7 +118,7 @@ function cancelLongPress(element) {
 function clearSpecificRow(rowNum) {
     const cb = document.querySelector(`#row-${rowNum} .received-cb`);
     if(cb) cb.checked = false;
-    document.querySelectorAll(`input[data-row="${rowNum}"]`).forEach(inp => input.value = '');
+    document.querySelectorAll(`input[data-row="${rowNum}"]`).forEach(inp => inp.value = '');
     calculateRowTotal(rowNum);
     document.getElementById(`noteVal-${rowNum}`).value = '';
     const noteBtn = document.getElementById(`noteBtn-${rowNum}`);
@@ -148,11 +148,16 @@ function generateRowHTML(i) {
             </td>
         `;
     });
+    
+    // 🌟 這裡加入了專屬的麥克風按鈕
     rowHtml += `
             <td class="row-total" id="total-${i}" onclick="handleTotalClick(${i})" title="點1下收500，點2下收1000">$0</td>
             <td>
-                <button class="note-btn" id="noteBtn-${i}" onclick="openNoteModal(${i})">📝</button>
-                <input type="hidden" id="noteVal-${i}" value="">
+                <div style="display: flex; gap: 6px; justify-content: center;">
+                    <button class="note-btn" style="width: 38px; padding: 6px; background: #e0e7ff; border-color: #c7d2fe; font-size:16px;" id="voiceBtn-${i}" onclick="startVoiceOrder(${i})" title="語音點單">🎤</button>
+                    <button class="note-btn" style="width: 38px; padding: 6px; font-size:16px;" id="noteBtn-${i}" onclick="openNoteModal(${i})" title="文字備註">📝</button>
+                    <input type="hidden" id="noteVal-${i}" value="">
+                </div>
             </td>
         </tr>
     `;
@@ -273,8 +278,89 @@ function initVirtualKeypad() {
 }
 
 // ==========================================
-// 5. 🌟 語音辨識與備註功能 (Modal)
+// 5. 🌟 終極殺器：AI 語音點餐解析引擎
 // ==========================================
+let rowSpeechRecognition = null;
+
+function startVoiceOrder(rowNum) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert("⚠️ 您的瀏覽器不支援語音輸入！請使用 Safari 或 Chrome。");
+        return;
+    }
+
+    if (rowSpeechRecognition) rowSpeechRecognition.stop();
+
+    rowSpeechRecognition = new SpeechRecognition();
+    rowSpeechRecognition.lang = 'zh-TW';
+    rowSpeechRecognition.interimResults = false;
+
+    const btn = document.getElementById(`voiceBtn-${rowNum}`);
+    
+    rowSpeechRecognition.onstart = function() {
+        btn.textContent = '🔴';
+        btn.style.background = '#fecaca';
+        showToast("🎤 請開始點餐 (例如：原味兩個草莓三個)");
+    };
+
+    rowSpeechRecognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        showToast(`🗣️ 聽到：${transcript}`);
+        parseVoiceOrder(transcript, rowNum);
+    };
+
+    rowSpeechRecognition.onerror = function() {
+        showToast("⚠️ 聽不清楚，請再試一次");
+    };
+
+    rowSpeechRecognition.onend = function() {
+        btn.textContent = '🎤';
+        btn.style.background = '#e0e7ff';
+    };
+
+    rowSpeechRecognition.start();
+}
+
+function parseVoiceOrder(transcript, rowNum) {
+    // 建立語音數字與阿拉伯數字的對照表
+    const numMap = { '一':1, '二':2, '兩':2, '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9, '十':10, '十一':11, '十二':12 };
+    const numRegexStr = '([0-9]+|十一|十二|一|二|兩|三|四|五|六|七|八|九|十)';
+    
+    let matchCount = 0;
+
+    products.forEach(p => {
+        // 防止產品名稱中有正則特殊符號
+        const safeName = p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        
+        // 模式1: 產品名 + 數字 (例如: 原味兩顆)
+        const p1 = new RegExp(`${safeName}[^0-9一二兩三四五六七八九十]*${numRegexStr}`, 'i');
+        // 模式2: 數字 + 產品名 (例如: 兩個原味)
+        const p2 = new RegExp(`${numRegexStr}[^0-9一二兩三四五六七八九十]*${safeName}`, 'i');
+        
+        let m = transcript.match(p1) || transcript.match(p2);
+        
+        if (m) {
+            let qtyStr = m[1];
+            let qty = parseInt(qtyStr);
+            if (isNaN(qty)) qty = numMap[qtyStr] || 1;
+            
+            const input = document.querySelector(`input[data-row="${rowNum}"][data-prod-id="${p.id}"]`);
+            if (input) {
+                input.value = qty; // 自動填入
+                matchCount++;
+            }
+        }
+    });
+    
+    if (matchCount > 0) {
+        calculateRowTotal(rowNum); // 瞬間重新計算總價
+        setTimeout(() => showToast(`✅ 成功辨識 ${matchCount} 種口味！`), 1500);
+    } else {
+        setTimeout(() => showToast(`❌ 聽不懂口味，請手動輸入`), 1500);
+    }
+}
+
+// 備註的語音輸入 (保留給📝按鈕裡面的大框框用)
 function openNoteModal(rowNum) {
     currentNoteRow = rowNum;
     document.getElementById('noteInput').value = document.getElementById(`noteVal-${rowNum}`).value;
@@ -296,45 +382,23 @@ function confirmNote() {
     closeNoteModal();
 }
 
-// 🎤 實裝語音辨識 (Web Speech API)
 function toggleSpeech() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const micBtn = document.getElementById('micBtn');
 
-    if (!SpeechRecognition) {
-        alert("⚠️ 您的瀏覽器不支援語音輸入功能！請使用 Chrome 瀏覽器。");
-        return;
-    }
-
+    if (!SpeechRecognition) { alert("⚠️ 不支援語音輸入！"); return; }
     if (!speechRecognition) {
         speechRecognition = new SpeechRecognition();
         speechRecognition.lang = 'zh-TW';
-        speechRecognition.interimResults = false;
-        speechRecognition.maxAlternatives = 1;
-
         speechRecognition.onresult = function(event) {
-            const result = event.results[0][0].transcript;
             const input = document.getElementById('noteInput');
-            input.value = input.value + (input.value ? ' ' : '') + result; // 疊加上去
-            micBtn.innerHTML = '<span>🎤 語音輸入</span>';
-            micBtn.style.background = "";
+            input.value = input.value + (input.value ? ' ' : '') + event.results[0][0].transcript;
+            micBtn.innerHTML = '<span>🎤 語音輸入</span>'; micBtn.style.background = "";
         };
-
-        speechRecognition.onerror = function(event) {
-            console.error("語音錯誤", event.error);
-            showToast("⚠️ 語音辨識失敗，請重試");
-            micBtn.innerHTML = '<span>🎤 語音輸入</span>';
-            micBtn.style.background = "";
-        };
-
-        speechRecognition.onend = function() {
-            micBtn.innerHTML = '<span>🎤 語音輸入</span>';
-            micBtn.style.background = "";
-        };
+        speechRecognition.onerror = function() { showToast("⚠️ 失敗，請重試"); micBtn.innerHTML = '<span>🎤 語音輸入</span>'; micBtn.style.background = ""; };
+        speechRecognition.onend = function() { micBtn.innerHTML = '<span>🎤 語音輸入</span>'; micBtn.style.background = ""; };
     }
-
-    micBtn.innerHTML = '<span>🎙️ 正在聆聽...</span>';
-    micBtn.style.background = "#fca5a5"; // 變成紅色表示錄音中
+    micBtn.innerHTML = '<span>🎙️ 聆聽中...</span>'; micBtn.style.background = "#fca5a5";
     speechRecognition.start();
 }
 
