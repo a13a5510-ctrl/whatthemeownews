@@ -6,8 +6,9 @@ const API_BASE_URL = "https://whatthemeownews-erp-backend-324921111026.europe-we
 let products = [];
 let activeInput = null;
 let currentNoteRow = null;
-let currentRowCount = 10; // 🌟 預設 10 行，未來會自動增加
-let baseServerReceived = 0; // 紀錄從伺服器抓來的已結帳金額
+let currentRowCount = 10; 
+let baseServerReceived = 0; 
+let speechRecognition = null; // 語音辨識器
 
 // ==========================================
 // 1. 系統初始化
@@ -33,7 +34,6 @@ function updateDateDisplay() {
     `;
 }
 
-// 🌟 顯示找零的 Toast 動畫
 function showToast(message) {
     const toast = document.getElementById("toast");
     toast.textContent = message;
@@ -65,12 +65,11 @@ async function fetchTodayStats() {
         if (result.status === 'success') {
             document.getElementById('dashCount').textContent = result.data.total_orders_count;
             baseServerReceived = result.data.revenue_received;
-            updateLiveRevenue(); // 🌟 重新計算本地+雲端的總額
+            updateLiveRevenue(); 
         }
     } catch (e) { console.log("業績同步失敗"); }
 }
 
-// 🌟 即時更新畫面上的營業額 (伺服器已收 + 畫面上剛勾的)
 function updateLiveRevenue() {
     let localReceived = 0;
     for(let i=1; i<=currentRowCount; i++) {
@@ -80,7 +79,6 @@ function updateLiveRevenue() {
             localReceived += rawTotal;
         }
     }
-    // 顯示最新的動態數字
     document.getElementById('dashTotal').textContent = `$${(baseServerReceived + localReceived).toLocaleString()}`;
 }
 
@@ -96,18 +94,50 @@ function renderTableHeader() {
     products.forEach(p => {
         html += `<th style="text-align: center;">${p.name}<span class="th-price">(${p.price})</span></th>`;
     });
-    html += `<th style="width: 100px; text-align: center;">總額(點算找零)</th><th style="width: 80px; text-align: center;">備註</th>`;
+    // 🌟 修復：拿掉 (點算找零) 輔助說明
+    html += `<th style="width: 80px; text-align: center;">總額</th><th style="width: 80px; text-align: center;">備註</th>`;
     tr.innerHTML = html;
 }
 
-// 生成單行 HTML 的函數
+// 🌟 長按清空邏輯 (Long Press 2 seconds)
+let pressTimer;
+function startLongPress(rowNum, element) {
+    element.classList.add('pressing');
+    pressTimer = setTimeout(() => {
+        clearSpecificRow(rowNum);
+        if (navigator.vibrate) navigator.vibrate(100);
+        showToast(`🧹 第 ${rowNum} 行資料已清空`);
+    }, 2000);
+}
+
+function cancelLongPress(element) {
+    clearTimeout(pressTimer);
+    element.classList.remove('pressing');
+}
+
+function clearSpecificRow(rowNum) {
+    const cb = document.querySelector(`#row-${rowNum} .received-cb`);
+    if(cb) cb.checked = false;
+    document.querySelectorAll(`input[data-row="${rowNum}"]`).forEach(inp => input.value = '');
+    calculateRowTotal(rowNum);
+    document.getElementById(`noteVal-${rowNum}`).value = '';
+    const noteBtn = document.getElementById(`noteBtn-${rowNum}`);
+    noteBtn.classList.remove('has-note');
+    noteBtn.textContent = '📝';
+}
+
 function generateRowHTML(i) {
     let rowHtml = `
         <tr id="row-${i}">
             <td style="text-align: center;">
                 <input type="checkbox" class="received-cb" data-row="${i}" style="width:24px; height:24px; cursor:pointer;" onchange="handleCheckboxChange(event)">
             </td>
-            <td style="text-align: center; font-weight:bold; color:#64748b;">${String(i).padStart(2, '0')}</td>
+            <td class="row-no" style="text-align: center; font-weight:bold; color:#64748b; cursor:pointer; user-select:none;"
+                onmousedown="startLongPress(${i}, this)" onmouseup="cancelLongPress(this)" onmouseleave="cancelLongPress(this)"
+                ontouchstart="startLongPress(${i}, this)" ontouchend="cancelLongPress(this)" ontouchcancel="cancelLongPress(this)"
+                title="長按2秒清空此行">
+                ${String(i).padStart(2, '0')}
+            </td>
     `;
     products.forEach(p => {
         rowHtml += `
@@ -129,18 +159,11 @@ function generateRowHTML(i) {
     return rowHtml;
 }
 
-// 渲染指定範圍的行數
 function renderTableRows(start, end) {
     const tbody = document.getElementById('dataRowsBody');
     let html = "";
-    for (let i = start; i <= end; i++) {
-        html += generateRowHTML(i);
-    }
-    if (start === 1) {
-        tbody.innerHTML = html; // 覆蓋
-    } else {
-        tbody.insertAdjacentHTML('beforeend', html); // 附加在後面
-    }
+    for (let i = start; i <= end; i++) { html += generateRowHTML(i); }
+    if (start === 1) { tbody.innerHTML = html; } else { tbody.insertAdjacentHTML('beforeend', html); }
     closeKeypad();
 }
 
@@ -150,12 +173,9 @@ function resetTable() {
     updateLiveRevenue();
 }
 
-// 🌟 處理勾選事件 (觸發自動新增行數 & 更新營收)
 function handleCheckboxChange(e) {
-    updateLiveRevenue(); // 更新上方營收
-    
+    updateLiveRevenue(); 
     const rowNum = parseInt(e.target.dataset.row);
-    // 如果勾選的是「目前表格的最後一行」，自動多生 5 行出來！
     if (rowNum === currentRowCount && e.target.checked) {
         let newStart = currentRowCount + 1;
         currentRowCount += 5;
@@ -173,19 +193,16 @@ function calculateRowTotal(rowNum) {
     });
     document.getElementById(`total-${rowNum}`).textContent = `$${total}`;
     document.getElementById(`total-${rowNum}`).dataset.rawTotal = total;
-    updateLiveRevenue(); // 輸入數字時也即時更新營收
+    updateLiveRevenue(); 
 }
 
-// 🌟 處理總額點擊 (單擊 500，雙擊 1000)
 let clickTimer = null;
 function handleTotalClick(rowNum) {
     if (clickTimer) {
-        // 觸發雙擊 (Double Click) -> 1000 元
         clearTimeout(clickTimer);
         clickTimer = null;
         calculateChange(rowNum, 1000);
     } else {
-        // 觸發單擊 (Single Click) -> 等待一下確認不是雙擊，然後算 500 元
         clickTimer = setTimeout(() => {
             clickTimer = null;
             calculateChange(rowNum, 500);
@@ -202,7 +219,6 @@ function calculateChange(rowNum, payAmount) {
         showToast(`⚠️ 客人付的 $${payAmount} 不夠哦！(總額 $${rawTotal})`);
     } else {
         showToast(`💵 收 $${payAmount}，應找零：$${change}`);
-        // 貼心設計：順便幫店員把左邊的收錢框打勾
         const cb = document.querySelector(`#row-${rowNum} .received-cb`);
         if(!cb.checked) {
             cb.checked = true;
@@ -257,14 +273,19 @@ function initVirtualKeypad() {
 }
 
 // ==========================================
-// 5. 備註功能 (Modal)
+// 5. 🌟 語音辨識與備註功能 (Modal)
 // ==========================================
 function openNoteModal(rowNum) {
     currentNoteRow = rowNum;
     document.getElementById('noteInput').value = document.getElementById(`noteVal-${rowNum}`).value;
     document.getElementById('noteModal').style.display = 'flex';
 }
-function closeNoteModal() { document.getElementById('noteModal').style.display = 'none'; currentNoteRow = null; }
+function closeNoteModal() { 
+    document.getElementById('noteModal').style.display = 'none'; 
+    currentNoteRow = null; 
+    if(speechRecognition) speechRecognition.stop(); 
+}
+
 function confirmNote() {
     if (!currentNoteRow) return;
     const noteText = document.getElementById('noteInput').value.trim();
@@ -273,6 +294,48 @@ function confirmNote() {
     if (noteText) { btn.classList.add('has-note'); btn.textContent = '📄'; } 
     else { btn.classList.remove('has-note'); btn.textContent = '📝'; }
     closeNoteModal();
+}
+
+// 🎤 實裝語音辨識 (Web Speech API)
+function toggleSpeech() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const micBtn = document.getElementById('micBtn');
+
+    if (!SpeechRecognition) {
+        alert("⚠️ 您的瀏覽器不支援語音輸入功能！請使用 Chrome 瀏覽器。");
+        return;
+    }
+
+    if (!speechRecognition) {
+        speechRecognition = new SpeechRecognition();
+        speechRecognition.lang = 'zh-TW';
+        speechRecognition.interimResults = false;
+        speechRecognition.maxAlternatives = 1;
+
+        speechRecognition.onresult = function(event) {
+            const result = event.results[0][0].transcript;
+            const input = document.getElementById('noteInput');
+            input.value = input.value + (input.value ? ' ' : '') + result; // 疊加上去
+            micBtn.innerHTML = '<span>🎤 語音輸入</span>';
+            micBtn.style.background = "";
+        };
+
+        speechRecognition.onerror = function(event) {
+            console.error("語音錯誤", event.error);
+            showToast("⚠️ 語音辨識失敗，請重試");
+            micBtn.innerHTML = '<span>🎤 語音輸入</span>';
+            micBtn.style.background = "";
+        };
+
+        speechRecognition.onend = function() {
+            micBtn.innerHTML = '<span>🎤 語音輸入</span>';
+            micBtn.style.background = "";
+        };
+    }
+
+    micBtn.innerHTML = '<span>🎙️ 正在聆聽...</span>';
+    micBtn.style.background = "#fca5a5"; // 變成紅色表示錄音中
+    speechRecognition.start();
 }
 
 // ==========================================
@@ -328,16 +391,7 @@ function calcAction(val) {
 }
 
 function toggleTheme() {
-    // 🌟 強制切換 data-theme
     const isDark = document.body.getAttribute('data-theme') === 'dark';
     document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
     document.getElementById('themeBtn').textContent = isDark ? '[ 深色模式 ]' : '[ 淺色模式 ]';
-}
-
-function toggleFullScreen() {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => console.log(err));
-    } else {
-        document.exitFullscreen();
-    }
 }
