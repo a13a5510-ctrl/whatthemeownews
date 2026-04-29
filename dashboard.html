@@ -202,7 +202,7 @@
                         <tr>
                             <th>時間</th>
                             <th>號碼牌</th>
-                            <th>金額</th>
+                            <th>購買品項</th> <th>金額</th>
                             <th style="text-align: center;">結帳狀態</th>
                             <th>備註/需求</th>
                         </tr>
@@ -233,7 +233,11 @@
         updateClock();
 
         function formatTime(isoString) {
-            const date = new Date(isoString);
+            // 🌟 修正 8 小時時差：強制將後端回傳的字串標記為 UTC 時間 (Z)
+            let utcString = isoString;
+            if (!utcString.endsWith('Z')) utcString += 'Z';
+            
+            const date = new Date(utcString);
             return `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
         }
 
@@ -362,7 +366,7 @@
                             <tr>
                                 <td style="color: var(--text-muted); font-weight: 800;">${formatTime(order.created_at)}</td>
                                 <td><strong style="font-size:16px; color: var(--primary);">#${order.order_no}</strong></td>
-                                <td><strong style="font-size:16px;">$${order.total_amount.toLocaleString()}</strong></td>
+                                <td><span style="color: var(--primary); font-weight: 700; font-size: 14px;">${order.items || '-'}</span></td> <td><strong style="font-size:16px;">$${order.total_amount.toLocaleString()}</strong></td>
                                 <td style="text-align: center;">${order.received ? '<span class="badge paid">✅ 已收現</span>' : '<span class="badge unpaid">⏳ 待結帳</span>'}</td>
                                 <td style="color: var(--text-muted); font-size: 14px;">${order.note || '-'}</td>
                             </tr>
