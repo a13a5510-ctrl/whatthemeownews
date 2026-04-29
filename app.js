@@ -279,7 +279,7 @@ function initVirtualKeypad() {
 }
 
 // ==========================================
-// 5. 🌟 終極殺器：AI 語音點餐解析引擎
+// 5. 🌟 終極殺器：AI 語音點餐解析引擎 (Gemini LLM)
 // ==========================================
 function startVoiceOrder(rowNum) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -299,13 +299,15 @@ function startVoiceOrder(rowNum) {
     rowSpeechRecognition.onstart = function() {
         btn.textContent = '🔴';
         btn.style.background = '#fecaca';
-        showToast("🎤 請開始點餐 (例如：原味兩個草莓三個)");
+        showToast("🎤 錄音中... 請說 (例如：兩個原味三個草莓)");
     };
 
     rowSpeechRecognition.onresult = function(event) {
         const transcript = event.results[0][0].transcript;
-        showToast(`🗣️ 聽到：${transcript}`);
-        parseVoiceOrder(transcript, rowNum);
+        showToast(`🗣️ 聽到：「${transcript}」... AI 思考中 🧠`);
+        
+        // 🌟 將聽到的字串丟給後端的 AI 大腦處理
+        parseVoiceOrderWithAI(transcript, rowNum);
     };
 
     rowSpeechRecognition.onerror = function() {
@@ -320,37 +322,43 @@ function startVoiceOrder(rowNum) {
     rowSpeechRecognition.start();
 }
 
-function parseVoiceOrder(transcript, rowNum) {
-    const numMap = { '一':1, '二':2, '兩':2, '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9, '十':10, '十一':11, '十二':12 };
-    const numRegexStr = '([0-9]+|十一|十二|一|二|兩|三|四|五|六|七|八|九|十)';
-    
-    let matchCount = 0;
+async function parseVoiceOrderWithAI(transcript, rowNum) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/ai/parse-order`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transcript: transcript })
+        });
+        
+        const result = await res.json();
+        
+        if (result.status === 'success') {
+            const parsedData = result.data; // AI 回傳的 JSON，例如: {"原味": 2, "草莓": 3}
+            let matchCount = 0;
 
-    products.forEach(p => {
-        const safeName = p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const p1 = new RegExp(`${safeName}[^0-9一二兩三四五六七八九十]*${numRegexStr}`, 'i');
-        const p2 = new RegExp(`${numRegexStr}[^0-9一二兩三四五六七八九十]*${safeName}`, 'i');
-        
-        let m = transcript.match(p1) || transcript.match(p2);
-        
-        if (m) {
-            let qtyStr = m[1];
-            let qty = parseInt(qtyStr);
-            if (isNaN(qty)) qty = numMap[qtyStr] || 1;
-            
-            const input = document.querySelector(`input[data-row="${rowNum}"][data-prod-id="${p.id}"]`);
-            if (input) {
-                input.value = qty; 
-                matchCount++;
+            // 掃描 AI 回傳的資料並填入對應格子
+            for (const [prodName, qty] of Object.entries(parsedData)) {
+                const prod = products.find(p => p.name === prodName);
+                if (prod && qty > 0) {
+                    const input = document.querySelector(`input[data-row="${rowNum}"][data-prod-id="${prod.id}"]`);
+                    if (input) {
+                        input.value = qty; 
+                        matchCount++;
+                    }
+                }
             }
+            
+            if (matchCount > 0) {
+                calculateRowTotal(rowNum); // 瞬間重新計算總價
+                showToast(`✨ AI 神解析！成功填入 ${matchCount} 種口味！`);
+            } else {
+                showToast(`❌ AI 找不到對應的菜單，請手動輸入`);
+            }
+        } else {
+            showToast(`❌ AI 思考失敗: ${result.message}`);
         }
-    });
-    
-    if (matchCount > 0) {
-        calculateRowTotal(rowNum); 
-        setTimeout(() => showToast(`✅ 成功辨識 ${matchCount} 種口味！`), 1500);
-    } else {
-        setTimeout(() => showToast(`❌ 聽不懂口味，請手動輸入`), 1500);
+    } catch (e) {
+        showToast(`❌ 網路連線錯誤，無法呼叫 AI 大腦`);
     }
 }
 
