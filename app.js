@@ -2,10 +2,10 @@
 // 🐱 喵逮雞 POS 系統 - 核心神經網路 (app.js)
 // ==========================================
 
-// ⚠️ 徒兒注意：請將這裡換成您 Cloud Run 的真實網址！
+// ⚠️ 徒兒請注意：請務必將下方網址換成您自己真實的 Cloud Run 端點！
 const API_URL = "https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app"; 
 
-// 店內菜單 (大師依據您的截圖預設，可自由增刪)
+// 店內菜單
 const menuItems = [
     { name: "菜脯米", price: 30 },
     { name: "金沙", price: 35 },
@@ -34,20 +34,22 @@ function updateClock() {
     document.getElementById('date').innerText = now.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
 }
 
-// ================= 生成點餐表格 =================
+// ================= 生成完美比例點餐表格 =================
 function renderTable() {
-    const headers = document.getElementById('menu-headers');
+    const headerRow = document.getElementById('header-row');
     const tbody = document.getElementById('order-body');
     
-    // 生成表頭菜單
-    headers.innerHTML = menuItems.map(item => `<th>${item.name}<br><small>(${item.price})</small></th>`).join('');
+    // 正確平鋪生成表頭，解決疊羅漢問題
+    let headersHtml = `<th>收💰</th><th>No</th>`;
+    headersHtml += menuItems.map(item => `<th>${item.name}<br><small>(${item.price})</small></th>`).join('');
+    headersHtml += `<th>總額</th><th>語音/備註</th>`;
+    headerRow.innerHTML = headersHtml;
 
     // 生成 10 列訂單
     let rowsHtml = '';
     for (let i = 1; i <= 10; i++) {
         let rowId = i.toString().padStart(2, '0');
         
-        // 菜單輸入框
         let inputsHtml = menuItems.map(item => `
             <td>
                 <input type="number" min="0" class="qty-input" id="qty-${rowId}-${item.name}" data-price="${item.price}" data-row="${rowId}" onchange="calculateTotal('${rowId}')">
@@ -56,14 +58,16 @@ function renderTable() {
 
         rowsHtml += `
             <tr id="row-${rowId}">
-                <td><input type="checkbox" id="paid-${rowId}" class="paid-checkbox" style="transform: scale(1.5);"></td>
-                <td style="font-weight: bold;">${rowId}</td>
+                <td style="text-align: center;"><input type="checkbox" id="paid-${rowId}" class="paid-checkbox" style="transform: scale(1.5);"></td>
+                <td style="font-weight: bold; text-align: center;">${rowId}</td>
                 ${inputsHtml}
-                <td class="total-price" id="total-${rowId}">$0</td>
-                <td style="display: flex; gap: 5px; justify-content: center; align-items: center;">
-                    <button class="btn btn-voice" onclick="startVoiceOrder('${rowId}')"><i class="fas fa-microphone"></i></button>
-                    <input type="text" id="note-${rowId}" placeholder="備註..." style="width: 80px; padding: 5px;">
-                    <button class="btn btn-danger" onclick="clearRow('${rowId}')" title="清空此列"><i class="fas fa-trash"></i></button>
+                <td class="total-price" id="total-${rowId}" style="font-weight: bold; color: #e74c3c;">$0</td>
+                
+                <!-- 黑科技操作區 -->
+                <td style="display: flex; gap: 4px; justify-content: center; align-items: center; padding: 5px;">
+                    <button class="btn btn-voice" onclick="startVoiceOrder('${rowId}')" style="padding: 6px 10px;"><i class="fas fa-microphone"></i></button>
+                    <input type="text" id="note-${rowId}" placeholder="備註..." style="width: 70px; padding: 4px; font-size: 13px; border-radius: 4px; border: 1px solid #ccc;">
+                    <button class="btn btn-danger" onclick="clearRow('${rowId}')" title="清空此列" style="padding: 6px 10px;"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>
         `;
@@ -84,7 +88,7 @@ function calculateTotal(rowId) {
 }
 
 function clearRow(rowId) {
-    // 黑科技二執行區：一鍵清空整行
+    // 一鍵清空整行
     menuItems.forEach(item => {
         document.getElementById(`qty-${rowId}-${item.name}`).value = '';
     });
@@ -96,7 +100,6 @@ function clearRow(rowId) {
 
 // ================= 語音與 AI 黑科技串接 =================
 function startVoiceOrder(rowId) {
-    // 檢查瀏覽器是否支援語音 API (防範 iOS 護城河)
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
         alert("大師提醒：您的瀏覽器不支援語音辨識，請在 iPhone 上使用 Safari 瀏覽器開啟喔！");
@@ -118,8 +121,6 @@ function startVoiceOrder(rowId) {
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         console.log(`客席 ${rowId} 收到語音指令:`, transcript);
-        
-        // 呼叫 Google Cloud Run 上的大腦
         sendToGemini(rowId, transcript, voiceBtn, originalHtml);
     };
 
@@ -130,7 +131,6 @@ function startVoiceOrder(rowId) {
     };
     
     recognition.onend = () => {
-        // 如果沒有觸發 result 就結束了，確保按鈕恢復
         if(voiceBtn.style.backgroundColor === 'rgb(231, 76, 60)') {
            resetVoiceBtn(voiceBtn, originalHtml);
         }
@@ -138,7 +138,6 @@ function startVoiceOrder(rowId) {
 }
 
 function sendToGemini(rowId, transcript, voiceBtn, originalHtml) {
-    // 呼叫您的後端 API
     fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -146,8 +145,7 @@ function sendToGemini(rowId, transcript, voiceBtn, originalHtml) {
     })
     .then(response => response.json())
     .then(data => {
-        // 假設您的後端會把 AI 解析出的 JSON 放在 data.parsed_json
-        // (請根據您 main.py 實際回傳的結構調整)
+        // 抓取解析出來的 JSON
         const parsedData = data.parsed_json || data; 
         console.log("大師解析結果:", parsedData);
 
@@ -155,7 +153,7 @@ function sendToGemini(rowId, transcript, voiceBtn, originalHtml) {
         if (parsedData.action === "clear") {
             clearRow(rowId);
             resetVoiceBtn(voiceBtn, originalHtml);
-            return; // 終止後續動作
+            return; 
         }
 
         // ✍️ 黑科技一：自動填寫備註
