@@ -106,10 +106,25 @@
             </div>
         </div>
 
-        <div class="form-header" style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
-            <div class="date-display" id="dateDisplay">載入時間中...</div>
-            <img src="IMG_1673.PNG" alt="喵逮雞Logo" onerror="this.src='https://via.placeholder.com/150x80?text=Logo+%E9%81%BA%E5%A4%B1'" style="height: 80px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">
+        <!-- ✨ 替換成這個：喵逮雞專屬頂部並排資訊列 -->
+    <header style="display: flex; justify-content: center; align-items: center; max-width: 100%; padding: 15px 10px; margin-bottom: 20px; background-color: #1e2532; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        
+        <!-- 左半邊：時間顯示 -->
+        <div style="flex: 1; display: flex; justify-content: flex-end; padding-right: 20px;">
+            <div style="text-align: center;">
+                <div id="clock" style="font-size: 1.8rem; font-weight: bold; color: #66b3ff; letter-spacing: 2px;">00:00:00</div>
+                <div id="date" style="font-size: 1rem; color: #a0aec0; margin-top: 5px;">載入日期...</div>
+            </div>
         </div>
+
+        <!-- 中間的分隔線 -->
+        <div style="width: 2px; height: 60px; background-color: #4a5568; border-radius: 2px; opacity: 0.7;"></div>
+
+        <!-- 右半邊：喵逮雞 Logo -->
+        <div style="flex: 1; display: flex; justify-content: flex-start; padding-left: 20px;">
+            <img src="IMG_1673.PNG" alt="喵逮雞 Logo" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); border: 2px solid #2d3748;">
+        </div>
+    </header>
         
         <div class="tools-bar">
             <button class="tool-btn btn-calc" onclick="toggleCalculator()">🧮 計算機</button>
