@@ -1,5 +1,5 @@
 // ==========================================
-// 🚀 喵逮雞 雲端 POS 核心系統 (app.js 旗艦完整版)
+// 🚀 喵逮雞 雲端 POS 核心系統 (大師黑科技加持旗艦版)
 // ==========================================
 
 const API_BASE_URL = "https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app";
@@ -124,6 +124,7 @@ function clearSpecificRow(rowNum) {
     const noteBtn = document.getElementById(`noteBtn-${rowNum}`);
     noteBtn.classList.remove('has-note');
     noteBtn.textContent = '📝';
+    document.getElementById(`row-${rowNum}`).style.backgroundColor = ''; // 清除綠色背景
 }
 
 function generateRowHTML(i) {
@@ -185,6 +186,13 @@ function handleCheckboxChange(e) {
         let newStart = currentRowCount + 1;
         currentRowCount += 5;
         renderTableRows(newStart, currentRowCount);
+    }
+    
+    // 手動打勾時也加入綠底特效
+    if(e.target.checked) {
+        document.getElementById(`row-${rowNum}`).style.backgroundColor = 'rgba(46, 204, 113, 0.15)';
+    } else {
+        document.getElementById(`row-${rowNum}`).style.backgroundColor = '';
     }
 }
 
@@ -279,7 +287,7 @@ function initVirtualKeypad() {
 }
 
 // ==========================================
-// 5. 🌟 終極殺器：AI 語音點餐解析引擎 (Gemini LLM)
+// 5. 🌟 終極殺器：AI 語音點餐解析引擎 (加入三大黑科技)
 // ==========================================
 function startVoiceOrder(rowNum) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -306,7 +314,7 @@ function startVoiceOrder(rowNum) {
         const transcript = event.results[0][0].transcript;
         showToast(`🗣️ 聽到：「${transcript}」... AI 思考中 🧠`);
         
-        // 🌟 將聽到的字串丟給後端的 AI 大腦處理
+        // 丟給後端的 AI 大腦處理
         parseVoiceOrderWithAI(transcript, rowNum);
     };
 
@@ -333,7 +341,36 @@ async function parseVoiceOrderWithAI(transcript, rowNum) {
         const result = await res.json();
         
         if (result.status === 'success') {
-            const parsedData = result.data; // AI 回傳的 JSON，例如: {"原味": 2, "草莓": 3}
+            const parsedData = result.data; 
+
+            // 👇=== 大師的黑科技注入區 ===👇
+            
+            // 🛑 黑科技二：清空指令攔截
+            if (parsedData.action === "clear") {
+                clearSpecificRow(rowNum);
+                showToast(`🧹 語音指令：第 ${rowNum} 行已清空`);
+                return; // 直接結束，不再填寫數量
+            }
+
+            // ✍️ 黑科技一：自動填寫隱藏備註並亮起圖示
+            if (parsedData.note) {
+                document.getElementById(`noteVal-${rowNum}`).value = parsedData.note;
+                const noteBtn = document.getElementById(`noteBtn-${rowNum}`);
+                noteBtn.classList.add('has-note');
+                noteBtn.textContent = '📄';
+            }
+
+            // ✅ 黑科技三：已收款神技 (自動打勾並觸發綠底)
+            if (parsedData.is_paid === true) {
+                const cb = document.querySelector(`#row-${rowNum} .received-cb`);
+                if (!cb.checked) {
+                    cb.checked = true;
+                    handleCheckboxChange({target: cb}); // 觸發營收更新與變色
+                }
+            }
+            
+            // 👆=== 黑科技注入結束 ===👆
+
             let matchCount = 0;
 
             // 掃描 AI 回傳的資料並填入對應格子
@@ -348,9 +385,9 @@ async function parseVoiceOrderWithAI(transcript, rowNum) {
                 }
             }
             
-            if (matchCount > 0) {
+            if (matchCount > 0 || parsedData.note || parsedData.is_paid) {
                 calculateRowTotal(rowNum); // 瞬間重新計算總價
-                showToast(`✨ AI 神解析！成功填入 ${matchCount} 種口味！`);
+                showToast(`✨ AI 神解析完成！`);
             } else {
                 showToast(`❌ AI 找不到對應的菜單，請手動輸入`);
             }
