@@ -1,493 +1,208 @@
 // ==========================================
-// 🚀 喵逮雞 雲端 POS 核心系統 (app.js 旗艦完整版)
+// 🐱 喵逮雞 POS 系統 - 核心神經網路 (app.js)
 // ==========================================
 
-const API_BASE_URL = "https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app";
-let products = [];
-let activeInput = null;
-let currentNoteRow = null;
-let currentRowCount = 10; 
-let baseServerReceived = 0; 
-let speechRecognition = null; 
-let rowSpeechRecognition = null;
+// ⚠️ 徒兒注意：請將這裡換成您 Cloud Run 的真實網址！
+const API_URL = "https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app"; 
 
-// ==========================================
-// 1. 系統初始化
-// ==========================================
-window.onload = async () => {
-    updateDateDisplay();
-    setInterval(updateDateDisplay, 60000);
-    
-    await fetchProductsFromCloud();
-    await fetchTodayStats();
-    initVirtualKeypad();
-};
+// 店內菜單 (大師依據您的截圖預設，可自由增刪)
+const menuItems = [
+    { name: "菜脯米", price: 30 },
+    { name: "金沙", price: 35 },
+    { name: "泰奶", price: 35 },
+    { name: "起司", price: 35 },
+    { name: "鮪玉", price: 30 },
+    { name: "草莓", price: 30 },
+    { name: "抹茶", price: 30 },
+    { name: "巧克力", price: 30 },
+    { name: "卡士達", price: 25 },
+    { name: "原味", price: 20 }
+];
 
-function updateDateDisplay() {
+// ================= 初始化頁面 =================
+document.addEventListener("DOMContentLoaded", () => {
+    updateClock();
+    setInterval(updateClock, 1000);
+    renderTable();
+    setupThemeToggle();
+});
+
+// 時鐘功能
+function updateClock() {
     const now = new Date();
-    const days = ['日', '一', '二', '三', '四', '五', '六'];
-    const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
-    const dayStr = `星期${days[now.getDay()]}`;
-    const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    document.getElementById('clock').innerText = now.toLocaleTimeString('zh-TW', { hour12: false });
+    document.getElementById('date').innerText = now.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+}
+
+// ================= 生成點餐表格 =================
+function renderTable() {
+    const headers = document.getElementById('menu-headers');
+    const tbody = document.getElementById('order-body');
     
-    document.getElementById('dateDisplay').innerHTML = `
-        🕒 ${dateStr} ${dayStr} <span style="color:#38bdf8; margin-left:8px; font-size:18px;">${timeStr}</span>
-    `;
-}
+    // 生成表頭菜單
+    headers.innerHTML = menuItems.map(item => `<th>${item.name}<br><small>(${item.price})</small></th>`).join('');
 
-function showToast(message) {
-    const toast = document.getElementById("toast");
-    toast.textContent = message;
-    toast.className = "show";
-    setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2800);
-}
-
-// ==========================================
-// 2. 雲端資料同步區
-// ==========================================
-async function fetchProductsFromCloud() {
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/products`);
-        const result = await res.json();
-        if (result.status === 'success') {
-            products = result.data;
-            renderTableHeader();
-            renderTableRows(1, currentRowCount);
-        }
-    } catch (e) {
-        document.getElementById('headerRow').innerHTML = "<th style='color:red;'>無法連線到雲端伺服器！</th>";
-    }
-}
-
-async function fetchTodayStats() {
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/stats/today`);
-        const result = await res.json();
-        if (result.status === 'success') {
-            document.getElementById('dashCount').textContent = result.data.total_orders_count;
-            baseServerReceived = result.data.revenue_received;
-            updateLiveRevenue(); 
-        }
-    } catch (e) { console.log("業績同步失敗"); }
-}
-
-function updateLiveRevenue() {
-    let localReceived = 0;
-    for(let i=1; i<=currentRowCount; i++) {
-        let rawTotal = parseInt(document.getElementById(`total-${i}`).dataset.rawTotal) || 0;
-        let isChecked = document.querySelector(`#row-${i} .received-cb`).checked;
-        if(isChecked && rawTotal > 0) {
-            localReceived += rawTotal;
-        }
-    }
-    document.getElementById('dashTotal').textContent = `$${(baseServerReceived + localReceived).toLocaleString()}`;
-}
-
-// ==========================================
-// 3. 動態表格渲染與計算
-// ==========================================
-function renderTableHeader() {
-    const tr = document.getElementById('headerRow');
-    let html = `
-        <th style="width: 50px; text-align: center;">收💸</th>
-        <th style="width: 50px; text-align: center;">No</th>
-    `;
-    products.forEach(p => {
-        html += `<th style="text-align: center;">${p.name}<span class="th-price">(${p.price})</span></th>`;
-    });
-    html += `<th style="width: 80px; text-align: center;">總額</th><th style="width: 100px; text-align: center;">語音/備註</th>`;
-    tr.innerHTML = html;
-}
-
-// 🌟 長按兩秒清空邏輯
-let pressTimer;
-function startLongPress(rowNum, element) {
-    element.classList.add('pressing');
-    pressTimer = setTimeout(() => {
-        clearSpecificRow(rowNum);
-        if (navigator.vibrate) navigator.vibrate(100);
-        showToast(`🧹 第 ${rowNum} 行資料已清空`);
-    }, 2000);
-}
-
-function cancelLongPress(element) {
-    clearTimeout(pressTimer);
-    element.classList.remove('pressing');
-}
-
-function clearSpecificRow(rowNum) {
-    const cb = document.querySelector(`#row-${rowNum} .received-cb`);
-    if(cb) cb.checked = false;
-    document.querySelectorAll(`input[data-row="${rowNum}"]`).forEach(inp => inp.value = '');
-    calculateRowTotal(rowNum);
-    document.getElementById(`noteVal-${rowNum}`).value = '';
-    const noteBtn = document.getElementById(`noteBtn-${rowNum}`);
-    noteBtn.classList.remove('has-note');
-    noteBtn.textContent = '📝';
-}
-
-function generateRowHTML(i) {
-    let rowHtml = `
-        <tr id="row-${i}">
-            <td style="text-align: center;">
-                <input type="checkbox" class="received-cb" data-row="${i}" style="width:24px; height:24px; cursor:pointer;" onchange="handleCheckboxChange(event)">
-            </td>
-            <td class="row-no" style="text-align: center; font-weight:bold; color:#64748b; cursor:pointer; user-select:none;"
-                onmousedown="startLongPress(${i}, this)" onmouseup="cancelLongPress(this)" onmouseleave="cancelLongPress(this)"
-                ontouchstart="startLongPress(${i}, this)" ontouchend="cancelLongPress(this)" ontouchcancel="cancelLongPress(this)"
-                title="長按2秒清空此行">
-                ${String(i).padStart(2, '0')}
-            </td>
-    `;
-    products.forEach(p => {
-        rowHtml += `
+    // 生成 10 列訂單
+    let rowsHtml = '';
+    for (let i = 1; i <= 10; i++) {
+        let rowId = i.toString().padStart(2, '0');
+        
+        // 菜單輸入框
+        let inputsHtml = menuItems.map(item => `
             <td>
-                <input type="text" class="qty-input" inputmode="none" readonly
-                       data-row="${i}" data-price="${p.price}" data-prod-id="${p.id}" 
-                       onclick="setActiveInput(this)">
+                <input type="number" min="0" class="qty-input" id="qty-${rowId}-${item.name}" data-price="${item.price}" data-row="${rowId}" onchange="calculateTotal('${rowId}')">
             </td>
+        `).join('');
+
+        rowsHtml += `
+            <tr id="row-${rowId}">
+                <td><input type="checkbox" id="paid-${rowId}" class="paid-checkbox" style="transform: scale(1.5);"></td>
+                <td style="font-weight: bold;">${rowId}</td>
+                ${inputsHtml}
+                <td class="total-price" id="total-${rowId}">$0</td>
+                <td style="display: flex; gap: 5px; justify-content: center; align-items: center;">
+                    <button class="btn btn-voice" onclick="startVoiceOrder('${rowId}')"><i class="fas fa-microphone"></i></button>
+                    <input type="text" id="note-${rowId}" placeholder="備註..." style="width: 80px; padding: 5px;">
+                    <button class="btn btn-danger" onclick="clearRow('${rowId}')" title="清空此列"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
         `;
-    });
-    
-    rowHtml += `
-            <td class="row-total" id="total-${i}" onclick="handleTotalClick(${i})" title="點1下收500，點2下收1000">$0</td>
-            <td>
-                <div style="display: flex; gap: 6px; justify-content: center;">
-                    <button class="note-btn" style="width: 38px; padding: 6px; background: #e0e7ff; border-color: #c7d2fe; font-size:16px;" id="voiceBtn-${i}" onclick="startVoiceOrder(${i})" title="語音點單">🎤</button>
-                    <button class="note-btn" style="width: 38px; padding: 6px; font-size:16px;" id="noteBtn-${i}" onclick="openNoteModal(${i})" title="文字備註">📝</button>
-                    <input type="hidden" id="noteVal-${i}" value="">
-                </div>
-            </td>
-        </tr>
-    `;
-    return rowHtml;
-}
-
-function renderTableRows(start, end) {
-    const tbody = document.getElementById('dataRowsBody');
-    let html = "";
-    for (let i = start; i <= end; i++) { html += generateRowHTML(i); }
-    if (start === 1) { tbody.innerHTML = html; } else { tbody.insertAdjacentHTML('beforeend', html); }
-    closeKeypad();
-}
-
-function resetTable() {
-    currentRowCount = 10;
-    renderTableRows(1, currentRowCount);
-    updateLiveRevenue();
-}
-
-// 🌟 打勾最後一行自動生出五行
-function handleCheckboxChange(e) {
-    updateLiveRevenue(); 
-    const rowNum = parseInt(e.target.dataset.row);
-    if (rowNum === currentRowCount && e.target.checked) {
-        let newStart = currentRowCount + 1;
-        currentRowCount += 5;
-        renderTableRows(newStart, currentRowCount);
     }
+    tbody.innerHTML = rowsHtml;
 }
 
-function calculateRowTotal(rowNum) {
-    const inputs = document.querySelectorAll(`input[data-row="${rowNum}"]`);
+// ================= 核心計算與清空邏輯 =================
+function calculateTotal(rowId) {
     let total = 0;
-    inputs.forEach(input => {
-        const qty = parseInt(input.value) || 0;
-        const price = parseInt(input.dataset.price) || 0;
-        total += (qty * price);
-    });
-    document.getElementById(`total-${rowNum}`).textContent = `$${total}`;
-    document.getElementById(`total-${rowNum}`).dataset.rawTotal = total;
-    updateLiveRevenue(); 
-}
-
-// 🌟 單擊 500，雙擊 1000 邏輯
-let clickTimer = null;
-function handleTotalClick(rowNum) {
-    if (clickTimer) {
-        clearTimeout(clickTimer);
-        clickTimer = null;
-        calculateChange(rowNum, 1000);
-    } else {
-        clickTimer = setTimeout(() => {
-            clickTimer = null;
-            calculateChange(rowNum, 500);
-        }, 250); 
-    }
-}
-
-function calculateChange(rowNum, payAmount) {
-    let rawTotal = parseInt(document.getElementById(`total-${rowNum}`).dataset.rawTotal) || 0;
-    if(rawTotal === 0) return;
-    
-    let change = payAmount - rawTotal;
-    if (change < 0) {
-        showToast(`⚠️ 客人付的 $${payAmount} 不夠哦！(總額 $${rawTotal})`);
-    } else {
-        showToast(`💵 收 $${payAmount}，應找零：$${change}`);
-        const cb = document.querySelector(`#row-${rowNum} .received-cb`);
-        if(!cb.checked) {
-            cb.checked = true;
-            handleCheckboxChange({target: cb});
+    menuItems.forEach(item => {
+        let qty = document.getElementById(`qty-${rowId}-${item.name}`).value;
+        if (qty > 0) {
+            total += qty * item.price;
         }
-    }
-}
-
-// ==========================================
-// 4. 虛擬鍵盤邏輯
-// ==========================================
-function setActiveInput(inputElement) {
-    document.querySelectorAll('.qty-input').forEach(el => el.style.borderColor = '#ccc');
-    activeInput = inputElement;
-    activeInput.style.borderColor = '#4f46e5';
-    
-    const keypad = document.getElementById('virtualKeypad');
-    keypad.style.display = 'block';
-    setTimeout(() => { keypad.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
-}
-
-function closeKeypad() {
-    document.getElementById('virtualKeypad').style.display = 'none';
-    if(activeInput) {
-        activeInput.style.borderColor = '#ccc';
-        activeInput = null;
-    }
-}
-
-function initVirtualKeypad() {
-    document.querySelectorAll('.keypad-button').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const action = e.target.dataset.action;
-            const value = e.target.dataset.value;
-            
-            if (action === 'done') { closeKeypad(); return; }
-            if (!activeInput) return;
-            
-            let currentVal = activeInput.value;
-            if (action === 'clear') { activeInput.value = ''; } 
-            else if (action === 'back') { activeInput.value = currentVal.slice(0, -1); } 
-            else if (value) {
-                if (e.target.classList.contains('keypad-btn-quick')) {
-                    activeInput.value = value.replace('+', ''); 
-                } else {
-                    activeInput.value = currentVal + value;
-                }
-            }
-            calculateRowTotal(activeInput.dataset.row);
-        });
     });
+    document.getElementById(`total-${rowId}`).innerText = `$${total}`;
 }
 
-// ==========================================
-// 5. 🌟 終極殺器：AI 語音點餐解析引擎 (Gemini LLM)
-// ==========================================
-function startVoiceOrder(rowNum) {
+function clearRow(rowId) {
+    // 黑科技二執行區：一鍵清空整行
+    menuItems.forEach(item => {
+        document.getElementById(`qty-${rowId}-${item.name}`).value = '';
+    });
+    document.getElementById(`paid-${rowId}`).checked = false;
+    document.getElementById(`note-${rowId}`).value = '';
+    document.getElementById(`row-${rowId}`).style.backgroundColor = ''; // 恢復背景色
+    calculateTotal(rowId);
+}
+
+// ================= 語音與 AI 黑科技串接 =================
+function startVoiceOrder(rowId) {
+    // 檢查瀏覽器是否支援語音 API (防範 iOS 護城河)
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-        alert("⚠️ 您的瀏覽器不支援語音輸入！請使用 Safari 或 Chrome。");
+        alert("大師提醒：您的瀏覽器不支援語音辨識，請在 iPhone 上使用 Safari 瀏覽器開啟喔！");
         return;
     }
 
-    if (rowSpeechRecognition) rowSpeechRecognition.stop();
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'zh-TW';
+    recognition.interimResults = false;
 
-    rowSpeechRecognition = new SpeechRecognition();
-    rowSpeechRecognition.lang = 'zh-TW';
-    rowSpeechRecognition.interimResults = false;
+    // 正在聆聽的 UI 提示
+    const voiceBtn = document.querySelector(`#row-${rowId} .btn-voice`);
+    const originalHtml = voiceBtn.innerHTML;
+    voiceBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    voiceBtn.style.backgroundColor = '#e74c3c';
 
-    const btn = document.getElementById(`voiceBtn-${rowNum}`);
-    
-    rowSpeechRecognition.onstart = function() {
-        btn.textContent = '🔴';
-        btn.style.background = '#fecaca';
-        showToast("🎤 錄音中... 請說 (例如：兩個原味三個草莓)");
-    };
+    recognition.start();
 
-    rowSpeechRecognition.onresult = function(event) {
+    recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        showToast(`🗣️ 聽到：「${transcript}」... AI 思考中 🧠`);
+        console.log(`客席 ${rowId} 收到語音指令:`, transcript);
         
-        // 🌟 將聽到的字串丟給後端的 AI 大腦處理
-        parseVoiceOrderWithAI(transcript, rowNum);
+        // 呼叫 Google Cloud Run 上的大腦
+        sendToGemini(rowId, transcript, voiceBtn, originalHtml);
     };
 
-    rowSpeechRecognition.onerror = function() {
-        showToast("⚠️ 聽不清楚，請再試一次");
+    recognition.onerror = (event) => {
+        console.error("語音辨識錯誤:", event.error);
+        alert("聽不清楚，請再試一次！");
+        resetVoiceBtn(voiceBtn, originalHtml);
     };
-
-    rowSpeechRecognition.onend = function() {
-        btn.textContent = '🎤';
-        btn.style.background = '#e0e7ff';
-    };
-
-    rowSpeechRecognition.start();
+    
+    recognition.onend = () => {
+        // 如果沒有觸發 result 就結束了，確保按鈕恢復
+        if(voiceBtn.style.backgroundColor === 'rgb(231, 76, 60)') {
+           resetVoiceBtn(voiceBtn, originalHtml);
+        }
+    }
 }
 
-async function parseVoiceOrderWithAI(transcript, rowNum) {
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/ai/parse-order`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ transcript: transcript })
-        });
-        
-        const result = await res.json();
-        
-        if (result.status === 'success') {
-            const parsedData = result.data; // AI 回傳的 JSON，例如: {"原味": 2, "草莓": 3}
-            let matchCount = 0;
+function sendToGemini(rowId, transcript, voiceBtn, originalHtml) {
+    // 呼叫您的後端 API
+    fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: transcript })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // 假設您的後端會把 AI 解析出的 JSON 放在 data.parsed_json
+        // (請根據您 main.py 實際回傳的結構調整)
+        const parsedData = data.parsed_json || data; 
+        console.log("大師解析結果:", parsedData);
 
-            // 掃描 AI 回傳的資料並填入對應格子
-            for (const [prodName, qty] of Object.entries(parsedData)) {
-                const prod = products.find(p => p.name === prodName);
-                if (prod && qty > 0) {
-                    const input = document.querySelector(`input[data-row="${rowNum}"][data-prod-id="${prod.id}"]`);
-                    if (input) {
-                        input.value = qty; 
-                        matchCount++;
-                    }
-                }
+        // 🛑 黑科技二：清空指令攔截
+        if (parsedData.action === "clear") {
+            clearRow(rowId);
+            resetVoiceBtn(voiceBtn, originalHtml);
+            return; // 終止後續動作
+        }
+
+        // ✍️ 黑科技一：自動填寫備註
+        if (parsedData.note) {
+            document.getElementById(`note-${rowId}`).value = parsedData.note;
+        }
+
+        // ✅ 已收款神技：自動打勾並改變背景色亮起綠燈
+        if (parsedData.is_paid === true) {
+            document.getElementById(`paid-${rowId}`).checked = true;
+            document.getElementById(`row-${rowId}`).style.backgroundColor = 'rgba(46, 204, 113, 0.15)';
+        }
+
+        // 填寫數量
+        menuItems.forEach(item => {
+            if (parsedData[item.name]) {
+                document.getElementById(`qty-${rowId}-${item.name}`).value = parsedData[item.name];
             }
-            
-            if (matchCount > 0) {
-                calculateRowTotal(rowNum); // 瞬間重新計算總價
-                showToast(`✨ AI 神解析！成功填入 ${matchCount} 種口味！`);
-            } else {
-                showToast(`❌ AI 找不到對應的菜單，請手動輸入`);
-            }
+        });
+
+        // 重新計算總額
+        calculateTotal(rowId);
+        resetVoiceBtn(voiceBtn, originalHtml);
+    })
+    .catch(error => {
+        console.error("API 呼叫失敗:", error);
+        alert("大師神經網路斷線啦！請檢查伺服器或再試一次。");
+        resetVoiceBtn(voiceBtn, originalHtml);
+    });
+}
+
+function resetVoiceBtn(btn, originalHtml) {
+    btn.innerHTML = originalHtml;
+    btn.style.backgroundColor = '';
+}
+
+// ================= 淺色/深色模式切換 =================
+function setupThemeToggle() {
+    const toggleBtn = document.getElementById('theme-toggle');
+    toggleBtn.addEventListener('click', () => {
+        document.body.classList.toggle('dark-theme');
+        if (document.body.classList.contains('dark-theme')) {
+            toggleBtn.innerText = '[ 淺色模式 ]';
+            toggleBtn.className = 'btn btn-secondary';
         } else {
-            showToast(`❌ AI 思考失敗: ${result.message}`);
+            toggleBtn.innerText = '[ 深色模式 ]';
+            toggleBtn.className = 'btn btn-dark';
         }
-    } catch (e) {
-        showToast(`❌ 網路連線錯誤，無法呼叫 AI 大腦`);
-    }
-}
-
-// ==========================================
-// 6. 備註與語音輸入 (Modal)
-// ==========================================
-function openNoteModal(rowNum) {
-    currentNoteRow = rowNum;
-    document.getElementById('noteInput').value = document.getElementById(`noteVal-${rowNum}`).value;
-    document.getElementById('noteModal').style.display = 'flex';
-}
-function closeNoteModal() { 
-    document.getElementById('noteModal').style.display = 'none'; 
-    currentNoteRow = null; 
-    if(speechRecognition) speechRecognition.stop(); 
-}
-
-function confirmNote() {
-    if (!currentNoteRow) return;
-    const noteText = document.getElementById('noteInput').value.trim();
-    document.getElementById(`noteVal-${currentNoteRow}`).value = noteText;
-    const btn = document.getElementById(`noteBtn-${currentNoteRow}`);
-    if (noteText) { btn.classList.add('has-note'); btn.textContent = '📄'; } 
-    else { btn.classList.remove('has-note'); btn.textContent = '📝'; }
-    closeNoteModal();
-}
-
-function toggleSpeech() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const micBtn = document.getElementById('micBtn');
-
-    if (!SpeechRecognition) { alert("⚠️ 不支援語音輸入！"); return; }
-    if (!speechRecognition) {
-        speechRecognition = new SpeechRecognition();
-        speechRecognition.lang = 'zh-TW';
-        speechRecognition.onresult = function(event) {
-            const input = document.getElementById('noteInput');
-            input.value = input.value + (input.value ? ' ' : '') + event.results[0][0].transcript;
-            micBtn.innerHTML = '<span>🎤 語音輸入</span>'; micBtn.style.background = "";
-        };
-        speechRecognition.onerror = function() { showToast("⚠️ 失敗，請重試"); micBtn.innerHTML = '<span>🎤 語音輸入</span>'; micBtn.style.background = ""; };
-        speechRecognition.onend = function() { micBtn.innerHTML = '<span>🎤 語音輸入</span>'; micBtn.style.background = ""; };
-    }
-    micBtn.innerHTML = '<span>🎙️ 聆聽中...</span>'; micBtn.style.background = "#fca5a5";
-    speechRecognition.start();
-}
-
-// ==========================================
-// 7. 🚀 結帳打包與送出 (含品項)
-// ==========================================
-async function submitOrders() {
-    const payload = [];
-    for (let i = 1; i <= currentRowCount; i++) {
-        const rawTotal = parseInt(document.getElementById(`total-${i}`).dataset.rawTotal) || 0;
-        if (rawTotal > 0) {
-            const isReceived = document.querySelector(`#row-${i} .received-cb`).checked;
-            const note = document.getElementById(`noteVal-${i}`).value;
-            const orderNo = `D${new Date().getDate()}-${String(i).padStart(2,'0')}`;
-            
-            // 🌟 打包品項字串 (例如：原味x2, 草莓x1)
-            let itemsArr = [];
-            const inputs = document.querySelectorAll(`input.qty-input[data-row="${i}"]`);
-            inputs.forEach(input => {
-                const qty = parseInt(input.value);
-                if (qty > 0) {
-                    const prodId = parseInt(input.dataset.prodId);
-                    const prod = products.find(p => p.id === prodId);
-                    if (prod) itemsArr.push(`${prod.name}x${qty}`);
-                }
-            });
-            const itemsStr = itemsArr.join(', ');
-
-            payload.push({ 
-                order_no: orderNo, 
-                total_amount: rawTotal, 
-                received: isReceived, 
-                items: itemsStr,
-                note: note 
-            });
-        }
-    }
-
-    if (payload.length === 0) { alert("⚠️ 表格中沒有任何金額大於 0 的訂單喔！"); return; }
-
-    const btn = document.getElementById('checkoutBtn');
-    const originalText = document.getElementById('checkoutButtonText').textContent;
-    btn.disabled = true;
-    document.getElementById('checkoutButtonText').textContent = "📡 傳送至總部中...";
-
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/orders`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-        if (result.status === 'success') {
-            alert(`🎉 結帳成功！共送出 ${payload.length} 筆訂單！`);
-            resetTable();    
-            fetchTodayStats();    
-        } else { alert("❌ 結帳失敗：" + result.message); }
-    } catch (e) { alert("❌ 網路連線錯誤，請檢查您的網路或重新整理！"); } 
-    finally { btn.disabled = false; document.getElementById('checkoutButtonText').textContent = originalText; }
-}
-
-// ==========================================
-// 8. 其他工具 (計算機、深色模式等)
-// ==========================================
-function toggleCalculator() {
-    const calc = document.getElementById('calculatorContainer');
-    calc.style.display = calc.style.display === 'none' ? 'block' : 'none';
-}
-
-function calcAction(val) {
-    const display = document.getElementById('calcDisplay');
-    if (val === 'C') { display.value = ''; } 
-    else if (val === '=') { try { display.value = eval(display.value); } catch(e) { display.value = 'Error'; } } 
-    else { display.value += val; }
-}
-
-function toggleTheme() {
-    const isDark = document.body.getAttribute('data-theme') === 'dark';
-    document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    document.getElementById('themeBtn').textContent = isDark ? '[ 深色模式 ]' : '[ 淺色模式 ]';
-}
-
-function toggleFullScreen() {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => console.log(err));
-    } else {
-        document.exitFullscreen();
-    }
+    });
 }
