@@ -4,16 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>喵逮雞 POS 系統</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- 連結您的樣式表 -->
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- 引入 FontAwesome 圖示庫 (用於麥克風、打勾等圖示) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="dark-theme">
 
-    <!-- 1. 喵逮雞專屬：頂部並排質感資訊列 (保留您的要求) -->
+    <!-- 頂部控制列 -->
     <header style="display: flex; justify-content: center; align-items: center; max-width: 100%; padding: 15px 10px; margin-bottom: 20px; background-color: #1e2532; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
         
         <!-- ⏱️ 左半邊：時間顯示區塊 -->
@@ -24,7 +22,7 @@
             </div>
         </div>
 
-        <!-- 🌟 中間的分隔線 -->
+        <!-- 🌟 中間的質感分隔線 -->
         <div style="width: 2px; height: 60px; background-color: #4a5568; border-radius: 2px; opacity: 0.7;"></div>
 
         <!-- 🐱 右半邊：喵逮雞 Logo 區塊 -->
@@ -34,79 +32,35 @@
 
     </header>
 
-    <!-- 2. 今日訂單狀態列 (還原您原本的設計) -->
-    <div class="status-bar" style="display: flex; justify-content: space-around; background-color: #2d3748; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-        <div class="status-item text-center">
-            <span class="status-label" style="color: #a0aec0; font-size: 0.9rem;">📅 今日訂單</span><br>
-            <span id="daily-order-count" class="status-value" style="font-size: 1.5rem; color: #66b3ff; font-weight: bold;">0</span>
-        </div>
-        <div class="status-item text-center">
-            <span class="status-label" style="color: #a0aec0; font-size: 0.9rem;">💰 今日總額 (含未結帳)</span><br>
-            <span id="daily-total-amount" class="status-value" style="font-size: 1.5rem; color: #66b3ff; font-weight: bold;">$0</span>
-        </div>
-    </div>
-
-    <!-- 3. 功能按鈕列 (還原您原本的設計) -->
+    <!-- 功能按鈕列 -->
     <div class="action-buttons" style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px;">
-        <button id="calc-btn" class="btn btn-warning">🧮 計算機</button>
-        <button id="refresh-menu-btn" class="btn btn-primary">🔄 更新菜單</button>
+        <button id="calc-btn" class="btn btn-warning"><i class="fas fa-calculator"></i> 計算機</button>
+        <button id="refresh-menu-btn" class="btn btn-primary"><i class="fas fa-sync-alt"></i> 更新菜單</button>
         <button id="theme-toggle" class="btn btn-secondary">[ 淺色模式 ]</button>
     </div>
 
-    <!-- 4. 主要訂單表格 (還原您原本的 DOM 結構) -->
+    <!-- 主要訂單表格 (這裡留空，由您的 app.js 動態生成) -->
     <main>
         <div class="table-responsive">
             <table id="order-table" class="pos-table">
                 <thead>
-                    <tr id="menu-headers">
-                        <!-- 表頭由 app.js 生成 -->
+                    <tr>
+                        <th>收💰</th>
+                        <th>No</th>
+                        <!-- 菜單品項由 JS 動態載入 -->
+                        <th id="menu-headers">載入中...</th>
+                        <th>總額</th>
+                        <th>語音/備註</th>
                     </tr>
                 </thead>
                 <tbody id="order-body">
-                    <!-- 訂單列由 app.js 生成 -->
+                    <!-- 10個訂單列由 JS 動態產生 -->
                 </tbody>
             </table>
         </div>
     </main>
 
-    <!-- 備註輸入彈出視窗 (還原您最愛的經典功能！) -->
-    <div id="note-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-        <div class="modal-content" style="background-color: #2d3748; padding: 20px; border-radius: 10px; width: 80%; max-width: 300px; text-align: center;">
-            <h3 style="color: white; margin-top: 0;">新增備註</h3>
-            <textarea id="note-input" rows="3" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 5px; background-color: #1a202c; color: white; border: 1px solid #4a5568;" placeholder="輸入備註內容..."></textarea>
-            <div style="display: flex; justify-content: space-between;">
-                <button id="cancel-note" class="btn btn-secondary" style="flex: 1; margin-right: 5px;">取消</button>
-                <button id="save-note" class="btn btn-primary" style="flex: 1; margin-left: 5px;">儲存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 計算機彈出視窗 (保留您的計算機) -->
-    <div id="calc-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-        <div class="modal-content calc-container" style="background-color: #2d3748; padding: 20px; border-radius: 10px; width: 90%; max-width: 350px;">
-            <div id="calc-display" class="calc-display" style="background-color: #1a202c; color: white; padding: 15px; font-size: 2rem; text-align: right; border-radius: 5px; margin-bottom: 10px; min-height: 40px;">0</div>
-            <div class="calc-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
-                <button class="calc-btn btn-secondary" onclick="appendCalc('7')">7</button>
-                <button class="calc-btn btn-secondary" onclick="appendCalc('8')">8</button>
-                <button class="calc-btn btn-secondary" onclick="appendCalc('9')">9</button>
-                <button class="calc-btn btn-warning" onclick="setOp('/')">÷</button>
-                <button class="calc-btn btn-secondary" onclick="appendCalc('4')">4</button>
-                <button class="calc-btn btn-secondary" onclick="appendCalc('5')">5</button>
-                <button class="calc-btn btn-secondary" onclick="appendCalc('6')">6</button>
-                <button class="calc-btn btn-warning" onclick="setOp('*')">×</button>
-                <button class="calc-btn btn-secondary" onclick="appendCalc('1')">1</button>
-                <button class="calc-btn btn-secondary" onclick="appendCalc('2')">2</button>
-                <button class="calc-btn btn-secondary" onclick="appendCalc('3')">3</button>
-                <button class="calc-btn btn-warning" onclick="setOp('-')">-</button>
-                <button class="calc-btn btn-danger" onclick="clearCalc()">C</button>
-                <button class="calc-btn btn-secondary" onclick="appendCalc('0')">0</button>
-                <button class="calc-btn btn-primary" onclick="calculateResult()">=</button>
-                <button class="calc-btn btn-warning" onclick="setOp('+')">+</button>
-            </div>
-            <button id="close-calc" class="btn btn-secondary" style="width: 100%; margin-top: 15px;">關閉</button>
-        </div>
-    </div>
-
+    <!-- 連結您的 JavaScript 邏輯 -->
     <script src="app.js"></script>
 </body>
 </html>
