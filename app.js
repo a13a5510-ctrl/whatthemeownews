@@ -7,9 +7,13 @@ let baseServerReceived = 0;
 let speechRecognition = null; 
 let rowSpeechRecognition = null;
 
+// ==========================================
+// 1. 系統初始化
+// ==========================================
 window.onload = async () => {
     updateDateDisplay();
-    setInterval(updateDateDisplay, 60000);
+    // 🌟 大師優化：將更新頻率從 60000 (一分鐘) 改為 1000 (一秒鐘)，讓秒數會跳動！
+    setInterval(updateDateDisplay, 1000); 
     
     await fetchProductsFromCloud();
     await fetchTodayStats();
@@ -19,15 +23,23 @@ window.onload = async () => {
 function updateDateDisplay() {
     const now = new Date();
     const days = ['日', '一', '二', '三', '四', '五', '六'];
-    const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
-    const dayStr = `星期${days[now.getDay()]}`;
-    const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     
-    // 如果這兩個 element 不存在，就忽略
-    const dateDisplay = document.getElementById('dateDisplay');
-    if (dateDisplay) {
-        dateDisplay.innerHTML = `🕒 ${dateStr} ${dayStr} <span style="color:#38bdf8; margin-left:8px; font-size:18px;">${timeStr}</span>`;
-    }
+    // 格式化日期字串
+    const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (星期${days[now.getDay()]})`;
+    
+    // 格式化時間字串 (加入秒數)
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const ss = String(now.getSeconds()).padStart(2,'0');
+    const timeStr = `${hh}:${mm}:${ss}`;
+    
+    // 🌟 大師精準打擊：抓取新版 HTML 對應的 ID
+    const clockEl = document.getElementById('clock');
+    const dateEl = document.getElementById('date');
+    
+    // 將資料注入畫面
+    if (clockEl) clockEl.textContent = timeStr;
+    if (dateEl) dateEl.textContent = dateStr;
 }
 
 function showToast(message) {
