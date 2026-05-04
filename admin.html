@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>喵逮雞 ERP - 系統管理中心</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="[https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap](https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap)" rel="stylesheet">
     <style>
         :root { --bg: #f0f4f8; --card: #ffffff; --text: #1e293b; --primary: #4f46e5; --primary-hover: #4338ca; --border: #e2e8f0; --success: #10b981; --danger: #ef4444; --warning: #f59e0b;}
         [data-theme="dark"] { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --primary: #6366f1; --primary-hover: #818cf8; --border: #334155; --success: #34d399; --danger: #f87171; --warning: #fbbf24;}
@@ -24,7 +24,6 @@
         .btn-group { display: flex; gap: 10px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         
-        /* 🌟 拖曳區塊的專屬樣式 */
         .card { background: var(--card); padding: 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px; transition: transform 0.2s, box-shadow 0.2s; }
         .card.dragging { opacity: 0.5; transform: scale(0.98); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .card.drag-over { border: 2px dashed var(--primary); transform: scale(1.02); }
@@ -108,7 +107,7 @@
 
 <div class="sidebar">
     <div class="logo">🐱 喵逮雞 ERP</div>
-    <div class="nav-item active" onclick="switchPage('products', this)">📋 品項管理 (11)</div>
+    <div class="nav-item active" onclick="switchPage('products', this)">📋 品項管理</div>
     <div class="nav-item" onclick="switchPage('inventory', this)">📦 內餡/庫存管理</div>
     <div class="nav-item" onclick="switchPage('suppliers', this)">🚚 供應商管理</div>
     <div class="nav-item" onclick="switchPage('reports', this)">📊 報表分析</div>
@@ -259,9 +258,9 @@
 </div>
 
 <script>
-    const API_URL = "https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app";
+    const API_URL = "[https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app](https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app)";
     let materials = [];
-    let productsList = []; // 儲存所有品項資料供編輯使用
+    let productsList = []; 
 
     function switchPage(pageId, element) {
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -281,9 +280,6 @@
         document.getElementById('mobileToggleBtn').textContent = document.body.classList.contains('simulate-mobile') ? '💻 電腦模式' : '📱 手機預覽';
     }
 
-    // ==========================================
-    // 🌟 魔法：HTML5 拖曳區塊功能 (Drag & Drop)
-    // ==========================================
     function initDragAndDrop() {
         const cards = document.querySelectorAll('.drag-card');
         let draggedCard = null;
@@ -292,7 +288,6 @@
             card.setAttribute('draggable', true);
             
             card.addEventListener('dragstart', function(e) {
-                // 點擊輸入框時不要觸發拖曳
                 if(['INPUT', 'BUTTON', 'SELECT', 'LABEL'].includes(e.target.tagName)) {
                     e.preventDefault(); return;
                 }
@@ -306,9 +301,7 @@
                 draggedCard = null;
             });
 
-            card.addEventListener('dragover', function(e) {
-                e.preventDefault(); // 允許放下
-            });
+            card.addEventListener('dragover', function(e) { e.preventDefault(); });
 
             card.addEventListener('dragenter', function(e) {
                 e.preventDefault();
@@ -323,7 +316,6 @@
                 e.preventDefault();
                 this.classList.remove('drag-over');
                 if(this !== draggedCard && draggedCard) {
-                    // 交換位置的邏輯
                     const parent = this.parentNode;
                     const allCards = [...parent.querySelectorAll('.drag-card')];
                     const draggedIndex = allCards.indexOf(draggedCard);
@@ -398,7 +390,7 @@
         try {
             const res = await fetch(`${API_URL}/api/admin/products`);
             const result = await res.json();
-            productsList = result.data; // 存入全域供編輯使用
+            productsList = result.data; 
             
             const container = document.getElementById('productTableBody');
             if (productsList.length === 0) {
@@ -421,9 +413,6 @@
         } catch (e) { console.error("載入品項失敗", e); }
     }
 
-    // ==========================================
-    // 📦 材料庫存編輯邏輯
-    // ==========================================
     function openEditModal(id, name, unit, cost, stock) {
         document.getElementById('editMatId').value = id; document.getElementById('editMatName').value = name;
         document.getElementById('editMatUnit').value = unit; document.getElementById('editMatCost').value = cost;
@@ -457,9 +446,6 @@
         } catch (e) { alert("修改失敗"); } finally { btn.textContent = originalText; }
     }
 
-    // ==========================================
-    // 🍔 品項與配方編輯邏輯 (全新)
-    // ==========================================
     function openEditProductModal(productId) {
         const product = productsList.find(p => p.id === productId);
         if(!product) return;
@@ -468,7 +454,6 @@
         document.getElementById('editProdName').value = product.name;
         document.getElementById('editProdPrice').value = product.price;
 
-        // 生成編輯用的 BOM 列表
         const container = document.getElementById('editBomList');
         container.innerHTML = materials.map(m => `
             <div class="bom-item edit-bom-item">
@@ -479,7 +464,6 @@
             </div>
         `).join('');
 
-        // 將該品項現有的配方打勾並填入數量
         product.recipes.forEach(r => {
             const item = [...document.querySelectorAll('.edit-bom-item')].find(el => parseInt(el.querySelector('.mat-check').dataset.id) === r.material_id);
             if(item) {
@@ -527,14 +511,11 @@
             const result = await res.json();
             if(result.status === 'success') {
                 closeEditProductModal();
-                await loadProducts(); // 更新表格
+                await loadProducts(); 
             } else alert(result.message);
         } catch (e) { alert("儲存失敗"); } finally { btn.textContent = originalText; }
     }
 
-    // ==========================================
-    // 新增共用材料與產品邏輯
-    // ==========================================
     async function addMaterial(source) {
         const nameId = source === 'product' ? 'newMatName' : 'invMatName';
         const unitId = source === 'product' ? 'newMatUnit' : 'invMatUnit';
@@ -600,7 +581,7 @@
     }
 
     window.onload = async () => {
-        initDragAndDrop(); // 啟動拖曳功能
+        initDragAndDrop(); 
         await loadMaterials();
         await loadProducts();
     };
