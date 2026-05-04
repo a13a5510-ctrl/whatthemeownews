@@ -1,4 +1,4 @@
-const API_BASE_URL = "[https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app](https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app)";
+const API_BASE_URL = "https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app";
 let products = [];
 let activeInput = null;
 let currentNoteRow = null;
