@@ -1,8 +1,4 @@
-// ==========================================
-// 🚀 喵逮雞 雲端 POS 核心系統 (大師黑科技加持旗艦版)
-// ==========================================
-
-const API_BASE_URL = "https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app";
+const API_BASE_URL = "[https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app](https://whatthemeownews-erp-backend-324921111026.europe-west1.run.app)";
 let products = [];
 let activeInput = null;
 let currentNoteRow = null;
@@ -11,9 +7,6 @@ let baseServerReceived = 0;
 let speechRecognition = null; 
 let rowSpeechRecognition = null;
 
-// ==========================================
-// 1. 系統初始化
-// ==========================================
 window.onload = async () => {
     updateDateDisplay();
     setInterval(updateDateDisplay, 60000);
@@ -30,9 +23,11 @@ function updateDateDisplay() {
     const dayStr = `星期${days[now.getDay()]}`;
     const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     
-    document.getElementById('dateDisplay').innerHTML = `
-        🕒 ${dateStr} ${dayStr} <span style="color:#38bdf8; margin-left:8px; font-size:18px;">${timeStr}</span>
-    `;
+    // 如果這兩個 element 不存在，就忽略
+    const dateDisplay = document.getElementById('dateDisplay');
+    if (dateDisplay) {
+        dateDisplay.innerHTML = `🕒 ${dateStr} ${dayStr} <span style="color:#38bdf8; margin-left:8px; font-size:18px;">${timeStr}</span>`;
+    }
 }
 
 function showToast(message) {
@@ -42,9 +37,6 @@ function showToast(message) {
     setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2800);
 }
 
-// ==========================================
-// 2. 雲端資料同步區
-// ==========================================
 async function fetchProductsFromCloud() {
     try {
         const res = await fetch(`${API_BASE_URL}/api/admin/products`);
@@ -68,7 +60,7 @@ async function fetchTodayStats() {
             baseServerReceived = result.data.revenue_received;
             updateLiveRevenue(); 
         }
-    } catch (e) { console.log("業績同步失敗"); }
+    } catch (e) { console.log("業績同步失敗", e); }
 }
 
 function updateLiveRevenue() {
@@ -83,9 +75,6 @@ function updateLiveRevenue() {
     document.getElementById('dashTotal').textContent = `$${(baseServerReceived + localReceived).toLocaleString()}`;
 }
 
-// ==========================================
-// 3. 動態表格渲染與計算
-// ==========================================
 function renderTableHeader() {
     const tr = document.getElementById('headerRow');
     let html = `
@@ -99,7 +88,6 @@ function renderTableHeader() {
     tr.innerHTML = html;
 }
 
-// 🌟 長按兩秒清空邏輯
 let pressTimer;
 function startLongPress(rowNum, element) {
     element.classList.add('pressing');
@@ -124,7 +112,7 @@ function clearSpecificRow(rowNum) {
     const noteBtn = document.getElementById(`noteBtn-${rowNum}`);
     noteBtn.classList.remove('has-note');
     noteBtn.textContent = '📝';
-    document.getElementById(`row-${rowNum}`).style.backgroundColor = ''; // 清除綠色背景
+    document.getElementById(`row-${rowNum}`).style.backgroundColor = ''; 
 }
 
 function generateRowHTML(i) {
@@ -178,7 +166,6 @@ function resetTable() {
     updateLiveRevenue();
 }
 
-// 🌟 打勾最後一行自動生出五行
 function handleCheckboxChange(e) {
     updateLiveRevenue(); 
     const rowNum = parseInt(e.target.dataset.row);
@@ -188,7 +175,6 @@ function handleCheckboxChange(e) {
         renderTableRows(newStart, currentRowCount);
     }
     
-    // 手動打勾時也加入綠底特效
     if(e.target.checked) {
         document.getElementById(`row-${rowNum}`).style.backgroundColor = 'rgba(46, 204, 113, 0.15)';
     } else {
@@ -209,7 +195,6 @@ function calculateRowTotal(rowNum) {
     updateLiveRevenue(); 
 }
 
-// 🌟 單擊 500，雙擊 1000 邏輯
 let clickTimer = null;
 function handleTotalClick(rowNum) {
     if (clickTimer) {
@@ -241,9 +226,6 @@ function calculateChange(rowNum, payAmount) {
     }
 }
 
-// ==========================================
-// 4. 虛擬鍵盤邏輯
-// ==========================================
 function setActiveInput(inputElement) {
     document.querySelectorAll('.qty-input').forEach(el => el.style.borderColor = '#ccc');
     activeInput = inputElement;
@@ -286,9 +268,6 @@ function initVirtualKeypad() {
     });
 }
 
-// ==========================================
-// 5. 🌟 終極殺器：AI 語音點餐解析引擎 (加入三大黑科技)
-// ==========================================
 function startVoiceOrder(rowNum) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -313,8 +292,6 @@ function startVoiceOrder(rowNum) {
     rowSpeechRecognition.onresult = function(event) {
         const transcript = event.results[0][0].transcript;
         showToast(`🗣️ 聽到：「${transcript}」... AI 思考中 🧠`);
-        
-        // 丟給後端的 AI 大腦處理
         parseVoiceOrderWithAI(transcript, rowNum);
     };
 
@@ -343,16 +320,12 @@ async function parseVoiceOrderWithAI(transcript, rowNum) {
         if (result.status === 'success') {
             const parsedData = result.data; 
 
-            // 👇=== 大師的黑科技注入區 ===👇
-            
-            // 🛑 黑科技二：清空指令攔截
             if (parsedData.action === "clear") {
                 clearSpecificRow(rowNum);
                 showToast(`🧹 語音指令：第 ${rowNum} 行已清空`);
-                return; // 直接結束，不再填寫數量
+                return; 
             }
 
-            // ✍️ 黑科技一：自動填寫隱藏備註並亮起圖示
             if (parsedData.note) {
                 document.getElementById(`noteVal-${rowNum}`).value = parsedData.note;
                 const noteBtn = document.getElementById(`noteBtn-${rowNum}`);
@@ -360,20 +333,16 @@ async function parseVoiceOrderWithAI(transcript, rowNum) {
                 noteBtn.textContent = '📄';
             }
 
-            // ✅ 黑科技三：已收款神技 (自動打勾並觸發綠底)
             if (parsedData.is_paid === true) {
                 const cb = document.querySelector(`#row-${rowNum} .received-cb`);
                 if (!cb.checked) {
                     cb.checked = true;
-                    handleCheckboxChange({target: cb}); // 觸發營收更新與變色
+                    handleCheckboxChange({target: cb}); 
                 }
             }
-            
-            // 👆=== 黑科技注入結束 ===👆
 
             let matchCount = 0;
 
-            // 掃描 AI 回傳的資料並填入對應格子
             for (const [prodName, qty] of Object.entries(parsedData)) {
                 const prod = products.find(p => p.name === prodName);
                 if (prod && qty > 0) {
@@ -386,7 +355,7 @@ async function parseVoiceOrderWithAI(transcript, rowNum) {
             }
             
             if (matchCount > 0 || parsedData.note || parsedData.is_paid) {
-                calculateRowTotal(rowNum); // 瞬間重新計算總價
+                calculateRowTotal(rowNum); 
                 showToast(`✨ AI 神解析完成！`);
             } else {
                 showToast(`❌ AI 找不到對應的菜單，請手動輸入`);
@@ -399,9 +368,6 @@ async function parseVoiceOrderWithAI(transcript, rowNum) {
     }
 }
 
-// ==========================================
-// 6. 備註與語音輸入 (Modal)
-// ==========================================
 function openNoteModal(rowNum) {
     currentNoteRow = rowNum;
     document.getElementById('noteInput').value = document.getElementById(`noteVal-${rowNum}`).value;
@@ -443,9 +409,6 @@ function toggleSpeech() {
     speechRecognition.start();
 }
 
-// ==========================================
-// 7. 🚀 結帳打包與送出 (含品項)
-// ==========================================
 async function submitOrders() {
     const payload = [];
     for (let i = 1; i <= currentRowCount; i++) {
@@ -455,7 +418,6 @@ async function submitOrders() {
             const note = document.getElementById(`noteVal-${i}`).value;
             const orderNo = `D${new Date().getDate()}-${String(i).padStart(2,'0')}`;
             
-            // 🌟 打包品項字串 (例如：原味x2, 草莓x1)
             let itemsArr = [];
             const inputs = document.querySelectorAll(`input.qty-input[data-row="${i}"]`);
             inputs.forEach(input => {
@@ -500,18 +462,25 @@ async function submitOrders() {
     finally { btn.disabled = false; document.getElementById('checkoutButtonText').textContent = originalText; }
 }
 
-// ==========================================
-// 8. 其他工具 (計算機、深色模式等)
-// ==========================================
 function toggleCalculator() {
     const calc = document.getElementById('calculatorContainer');
     calc.style.display = calc.style.display === 'none' ? 'block' : 'none';
 }
 
+// 🌟 大師優化：防禦型 eval
 function calcAction(val) {
     const display = document.getElementById('calcDisplay');
     if (val === 'C') { display.value = ''; } 
-    else if (val === '=') { try { display.value = eval(display.value); } catch(e) { display.value = 'Error'; } } 
+    else if (val === '=') { 
+        try { 
+            // 防護機制：只允許執行數字與數學符號，避免 XSS 惡意指令
+            if (/^[\d+\-*/.]+$/.test(display.value)) {
+                display.value = eval(display.value); 
+            } else {
+                display.value = 'Error';
+            }
+        } catch(e) { display.value = 'Error'; } 
+    } 
     else { display.value += val; }
 }
 
