@@ -6,47 +6,55 @@
     <title>喵逮雞 POS 系統</title>
     <!-- 連結您的樣式表 -->
     <link rel="stylesheet" href="style.css">
-    <!-- 引入 FontAwesome 圖示庫 (用於麥克風、打勾等圖示) -->
+    <!-- 引入 FontAwesome 圖示庫 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="dark-theme">
 
-    <!-- 喵逮雞專屬：頂部左右對稱質感資訊列 -->
-    <header style="display: flex; justify-content: center; align-items: center; max-width: 100%; padding: 15px 10px; margin-bottom: 20px; background-color: #1e2532; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-        
-        <!-- ⏱️ 左半邊：時間顯示區塊 -->
-        <div style="flex: 1; display: flex; justify-content: flex-end; padding-right: 20px;">
-            <div style="text-align: center;">
-                <div id="clock" style="font-size: 1.8rem; font-weight: bold; color: #66b3ff; letter-spacing: 2px;">00:00:00</div>
-                <div id="date" style="font-size: 1rem; color: #a0aec0; margin-top: 5px;">載入日期...</div>
-            </div>
+    <!-- 1. 頂部訂單與總額狀態列 (還原深色橫幅) -->
+    <div style="background-color: #333; color: white; display: flex; justify-content: space-around; padding: 15px; border-radius: 10px; margin: 10px;">
+        <div style="text-align: center; font-size: 0.9rem; color: #aaa;">
+            📅 今日訂單<br><span style="font-size: 1.5rem; color: #f1c40f; font-weight: bold;">0</span>
         </div>
-
-        <!-- 🌟 中間的質感分隔線 -->
-        <div style="width: 2px; height: 60px; background-color: #4a5568; border-radius: 2px; opacity: 0.7;"></div>
-
-        <!-- 🐱 右半邊：喵逮雞 Logo 區塊 -->
-        <div style="flex: 1; display: flex; justify-content: flex-start; padding-left: 20px;">
-            <img src="IMG_1673.PNG" alt="喵逮雞 Logo" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); border: 2px solid #2d3748;">
+        <div style="text-align: center; font-size: 0.9rem; color: #aaa;">
+            💰 今日總額 (含未結帳)<br><span style="font-size: 1.5rem; color: #f1c40f; font-weight: bold;">$0</span>
         </div>
-
-    </header>
-
-    <!-- 功能按鈕列 -->
-    <div class="action-buttons" style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px;">
-        <button id="calc-btn" class="btn btn-warning"><i class="fas fa-calculator"></i> 計算機</button>
-        <button id="refresh-menu-btn" class="btn btn-primary"><i class="fas fa-sync-alt"></i> 更新菜單</button>
-        <button id="theme-toggle" class="btn btn-secondary">[ 淺色模式 ]</button>
     </div>
 
-    <!-- 主要訂單表格 -->
-    <main>
+    <!-- 2. 中央資訊區 (還原上下疊放) -->
+    <div style="text-align: center; margin-bottom: 20px;">
+        
+        <!-- 圓形時鐘區塊 -->
+        <div style="background-color: #3b3b4f; color: white; width: 120px; height: 120px; border-radius: 50%; display: inline-flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+            <div style="font-size: 0.9rem;">🕒 <span id="clock-year">2026</span></div>
+            <div id="clock-date" style="font-size: 0.9rem;">年x月x日</div>
+            <div id="clock-day" style="font-size: 0.9rem;">星期x</div>
+            <div id="clock-time" style="font-size: 1.3rem; color: #66b3ff; font-weight: bold; margin-top: 5px;">00:00</div>
+        </div>
+        
+        <br>
+        
+        <!-- 喵逮雞 Logo -->
+        <img src="IMG_1673.PNG" alt="喵逮雞 Logo" style="width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); margin-bottom: 15px;">
+        
+        <br>
+        
+        <!-- 功能按鈕列 -->
+        <div style="display: flex; justify-content: center; gap: 10px;">
+            <button id="calc-btn" class="btn" style="background-color: #e67e22; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 0.9rem; font-weight: bold;"><i class="fas fa-calculator"></i> 計算機</button>
+            <button id="refresh-menu-btn" class="btn" style="background-color: #3b5998; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 0.9rem; font-weight: bold;"><i class="fas fa-sync-alt"></i> 更新菜單</button>
+            <button id="theme-toggle" class="btn" style="background-color: #333; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 0.9rem; font-weight: bold;">[ 深色模式 ]</button>
+        </div>
+
+    </div>
+
+    <!-- 3. 主要訂單表格區 -->
+    <main style="padding: 0 10px;">
         <div class="table-responsive">
-            <table id="order-table" class="pos-table">
-                <!-- 🌟 這裡是修復疊羅漢的關鍵骨架 -->
+            <table id="order-table" class="pos-table" style="width: 100%; border-collapse: collapse; text-align: center;">
                 <thead>
                     <tr id="header-row">
-                        <!-- 表頭將由 app.js 自動平鋪生成 -->
+                        <!-- 表頭將由 app.js 自動平鋪生成 (還原經典藍底白字) -->
                     </tr>
                 </thead>
                 <tbody id="order-body">
