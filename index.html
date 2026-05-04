@@ -11,7 +11,7 @@
 </head>
 <body class="dark-theme">
 
-    <!-- 頂部控制列 -->
+    <!-- 喵逮雞專屬：頂部左右對稱質感資訊列 -->
     <header style="display: flex; justify-content: center; align-items: center; max-width: 100%; padding: 15px 10px; margin-bottom: 20px; background-color: #1e2532; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
         
         <!-- ⏱️ 左半邊：時間顯示區塊 -->
@@ -39,18 +39,14 @@
         <button id="theme-toggle" class="btn btn-secondary">[ 淺色模式 ]</button>
     </div>
 
-    <!-- 主要訂單表格 (這裡留空，由您的 app.js 動態生成) -->
+    <!-- 主要訂單表格 -->
     <main>
         <div class="table-responsive">
             <table id="order-table" class="pos-table">
+                <!-- 🌟 這裡是修復疊羅漢的關鍵骨架 -->
                 <thead>
-                    <tr>
-                        <th>收💰</th>
-                        <th>No</th>
-                        <!-- 菜單品項由 JS 動態載入 -->
-                        <th id="menu-headers">載入中...</th>
-                        <th>總額</th>
-                        <th>語音/備註</th>
+                    <tr id="header-row">
+                        <!-- 表頭將由 app.js 自動平鋪生成 -->
                     </tr>
                 </thead>
                 <tbody id="order-body">
