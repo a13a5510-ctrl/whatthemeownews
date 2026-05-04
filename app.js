@@ -27,22 +27,30 @@ document.addEventListener("DOMContentLoaded", () => {
     setupThemeToggle();
 });
 
-// 時鐘功能
+// ================= 還原圓形時鐘專用語法 =================
 function updateClock() {
     const now = new Date();
-    document.getElementById('clock').innerText = now.toLocaleTimeString('zh-TW', { hour12: false });
-    document.getElementById('date').innerText = now.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+    document.getElementById('clock-year').innerText = now.getFullYear();
+    document.getElementById('clock-date').innerText = `年${now.getMonth() + 1}月${now.getDate()}日`;
+    
+    const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+    document.getElementById('clock-day').innerText = weekdays[now.getDay()];
+    
+    // 只顯示 小時:分鐘
+    document.getElementById('clock-time').innerText = now.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
 }
 
-// ================= 生成完美比例點餐表格 =================
+// ================= 生成經典比例點餐表格 =================
 function renderTable() {
     const headerRow = document.getElementById('header-row');
     const tbody = document.getElementById('order-body');
     
-    // 正確平鋪生成表頭，解決疊羅漢問題
-    let headersHtml = `<th>收💰</th><th>No</th>`;
-    headersHtml += menuItems.map(item => `<th>${item.name}<br><small>(${item.price})</small></th>`).join('');
-    headersHtml += `<th>總額</th><th>語音/備註</th>`;
+    // 還原經典深藍色表頭
+    const thStyle = 'background-color: #3b5998; color: white; padding: 10px; border: 1px solid #ccc; white-space: nowrap;';
+    
+    let headersHtml = `<th style="${thStyle}">收💰</th><th style="${thStyle}">No</th>`;
+    headersHtml += menuItems.map(item => `<th style="${thStyle}">${item.name}<br><small>(${item.price})</small></th>`).join('');
+    headersHtml += `<th style="${thStyle}">總額</th><th style="${thStyle}">語音/備註</th>`;
     headerRow.innerHTML = headersHtml;
 
     // 生成 10 列訂單
@@ -51,23 +59,25 @@ function renderTable() {
         let rowId = i.toString().padStart(2, '0');
         
         let inputsHtml = menuItems.map(item => `
-            <td>
-                <input type="number" min="0" class="qty-input" id="qty-${rowId}-${item.name}" data-price="${item.price}" data-row="${rowId}" onchange="calculateTotal('${rowId}')">
+            <td style="border: 1px solid #ccc; padding: 5px;">
+                <input type="number" min="0" class="qty-input" id="qty-${rowId}-${item.name}" data-price="${item.price}" data-row="${rowId}" onchange="calculateTotal('${rowId}')" style="width: 40px; text-align: center; border-radius: 4px; border: 1px solid #aaa;">
             </td>
         `).join('');
 
         rowsHtml += `
             <tr id="row-${rowId}">
-                <td style="text-align: center;"><input type="checkbox" id="paid-${rowId}" class="paid-checkbox" style="transform: scale(1.5);"></td>
-                <td style="font-weight: bold; text-align: center;">${rowId}</td>
+                <td style="border: 1px solid #ccc;"><input type="checkbox" id="paid-${rowId}" class="paid-checkbox" style="transform: scale(1.5);"></td>
+                <td style="border: 1px solid #ccc; font-weight: bold; background-color: #f8f9fa; color: #333;">${rowId}</td>
                 ${inputsHtml}
-                <td class="total-price" id="total-${rowId}" style="font-weight: bold; color: #e74c3c;">$0</td>
+                <td class="total-price" id="total-${rowId}" style="border: 1px solid #ccc; font-weight: bold; color: #e74c3c; background-color: #f8f9fa;">$0</td>
                 
-                <!-- 黑科技操作區 -->
-                <td style="display: flex; gap: 4px; justify-content: center; align-items: center; padding: 5px;">
-                    <button class="btn btn-voice" onclick="startVoiceOrder('${rowId}')" style="padding: 6px 10px;"><i class="fas fa-microphone"></i></button>
-                    <input type="text" id="note-${rowId}" placeholder="備註..." style="width: 70px; padding: 4px; font-size: 13px; border-radius: 4px; border: 1px solid #ccc;">
-                    <button class="btn btn-danger" onclick="clearRow('${rowId}')" title="清空此列" style="padding: 6px 10px;"><i class="fas fa-trash"></i></button>
+                <!-- 黑科技操作區 (微調大小以融入經典版面) -->
+                <td style="border: 1px solid #ccc; padding: 2px;">
+                    <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+                        <button class="btn btn-voice" onclick="startVoiceOrder('${rowId}')" style="background-color: #e0e0e0; border: none; padding: 6px; border-radius: 4px; color: #333;"><i class="fas fa-microphone"></i></button>
+                        <input type="text" id="note-${rowId}" placeholder="備註" style="width: 50px; padding: 4px; font-size: 12px; border-radius: 4px; border: 1px solid #ccc;">
+                        <button class="btn btn-danger" onclick="clearRow('${rowId}')" title="清空" style="background-color: #e0e0e0; border: none; padding: 6px; border-radius: 4px; color: #666;"><i class="fas fa-trash"></i></button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -88,13 +98,12 @@ function calculateTotal(rowId) {
 }
 
 function clearRow(rowId) {
-    // 一鍵清空整行
     menuItems.forEach(item => {
         document.getElementById(`qty-${rowId}-${item.name}`).value = '';
     });
     document.getElementById(`paid-${rowId}`).checked = false;
     document.getElementById(`note-${rowId}`).value = '';
-    document.getElementById(`row-${rowId}`).style.backgroundColor = ''; // 恢復背景色
+    document.getElementById(`row-${rowId}`).style.backgroundColor = ''; 
     calculateTotal(rowId);
 }
 
@@ -110,11 +119,11 @@ function startVoiceOrder(rowId) {
     recognition.lang = 'zh-TW';
     recognition.interimResults = false;
 
-    // 正在聆聽的 UI 提示
     const voiceBtn = document.querySelector(`#row-${rowId} .btn-voice`);
     const originalHtml = voiceBtn.innerHTML;
     voiceBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     voiceBtn.style.backgroundColor = '#e74c3c';
+    voiceBtn.style.color = 'white';
 
     recognition.start();
 
@@ -145,36 +154,30 @@ function sendToGemini(rowId, transcript, voiceBtn, originalHtml) {
     })
     .then(response => response.json())
     .then(data => {
-        // 抓取解析出來的 JSON
         const parsedData = data.parsed_json || data; 
         console.log("大師解析結果:", parsedData);
 
-        // 🛑 黑科技二：清空指令攔截
         if (parsedData.action === "clear") {
             clearRow(rowId);
             resetVoiceBtn(voiceBtn, originalHtml);
             return; 
         }
 
-        // ✍️ 黑科技一：自動填寫備註
         if (parsedData.note) {
             document.getElementById(`note-${rowId}`).value = parsedData.note;
         }
 
-        // ✅ 已收款神技：自動打勾並改變背景色亮起綠燈
         if (parsedData.is_paid === true) {
             document.getElementById(`paid-${rowId}`).checked = true;
             document.getElementById(`row-${rowId}`).style.backgroundColor = 'rgba(46, 204, 113, 0.15)';
         }
 
-        // 填寫數量
         menuItems.forEach(item => {
             if (parsedData[item.name]) {
                 document.getElementById(`qty-${rowId}-${item.name}`).value = parsedData[item.name];
             }
         });
 
-        // 重新計算總額
         calculateTotal(rowId);
         resetVoiceBtn(voiceBtn, originalHtml);
     })
@@ -187,7 +190,8 @@ function sendToGemini(rowId, transcript, voiceBtn, originalHtml) {
 
 function resetVoiceBtn(btn, originalHtml) {
     btn.innerHTML = originalHtml;
-    btn.style.backgroundColor = '';
+    btn.style.backgroundColor = '#e0e0e0';
+    btn.style.color = '#333';
 }
 
 // ================= 淺色/深色模式切換 =================
@@ -197,10 +201,10 @@ function setupThemeToggle() {
         document.body.classList.toggle('dark-theme');
         if (document.body.classList.contains('dark-theme')) {
             toggleBtn.innerText = '[ 淺色模式 ]';
-            toggleBtn.className = 'btn btn-secondary';
+            toggleBtn.style.backgroundColor = '#333';
         } else {
             toggleBtn.innerText = '[ 深色模式 ]';
-            toggleBtn.className = 'btn btn-dark';
+            toggleBtn.style.backgroundColor = '#7f8c8d';
         }
     });
 }
