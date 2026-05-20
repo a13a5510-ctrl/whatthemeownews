@@ -66,6 +66,22 @@
         .row-no { position: relative; overflow: hidden; }
         .row-no::after { content: ''; position: absolute; bottom: 0; left: 0; height: 3px; background-color: #ef4444; width: 0; transition: width 2s linear; }
         .row-no.pressing::after { width: 100%; }
+
+        /* ✨ 大師加持：補齊彈窗與鬧鐘的精美樣式 */
+        .modal-base { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; }
+        .modal-content, .alarm-card { background: #fff; padding: 25px; border-radius: 16px; width: 85%; max-width: 380px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
+        [data-theme="dark"] .modal-content, [data-theme="dark"] .alarm-card { background: #1e293b; color: #f8fafc; border: 1px solid #334155; }
+        .alarm-header { font-size: 26px; font-weight: 900; color: #ef4444; margin-bottom: 15px; }
+        .alarm-info { font-size: 18px; margin-bottom: 25px; line-height: 1.5; }
+        .alarm-btn { background: #ef4444; color: white; border: none; padding: 12px 25px; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+        .modal-title { font-size: 22px; font-weight: bold; margin-bottom: 15px; }
+        #noteInput { width: 100%; height: 100px; padding: 15px; border-radius: 10px; border: 1px solid #cbd5e1; margin-bottom: 20px; box-sizing: border-box; font-size: 16px; resize: none; }
+        [data-theme="dark"] #noteInput { background: #0f172a; color: #fff; border-color: #334155; }
+        .modal-actions { display: flex; gap: 10px; justify-content: space-between; }
+        .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        #confirmNoteBtn { background: #10b981; color: white; }
+        #cancelNoteBtn { background: #64748b; color: white; }
+        #micBtn { background: #e0e7ff; color: #4f46e5; }
     </style>
 </head>
 <body data-theme="light">
@@ -106,9 +122,15 @@
     <header style="display: flex; justify-content: center; align-items: center; max-width: 100%; padding: 15px 10px; margin-bottom: 20px; background-color: #1e2532; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
         
         <div style="flex: 1; display: flex; justify-content: flex-end; padding-right: 20px;">
-            <div style="text-align: center;">
+            <div style="text-align: center; position: relative;">
                 <div id="clock" style="font-size: 1.8rem; font-weight: bold; color: #66b3ff; letter-spacing: 2px;">00:00:00</div>
                 <div id="date" style="font-size: 1rem; color: #a0aec0; margin-top: 5px;">載入日期...</div>
+                
+                <div style="margin-top: 8px;">
+                    <button onclick="toggleCustomDate()" style="background: #4b5563; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: 0.2s;">✍️ 歷史補登</button>
+                    <button onclick="cancelCustomDate()" id="cancelCustomDateBtn" style="display: none; background: #ef4444; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; margin-left: 5px;">❌ 退出補登</button>
+                    <input type="datetime-local" id="customDateInput" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
+                </div>
             </div>
         </div>
 
@@ -187,7 +209,7 @@
     </div>
 
     <div class="pagination" style="display: flex; justify-content: space-between; padding: 20px; background: transparent; border-top: 1px solid #e2e8f0;">
-        <button id="clearAllBtn" class="pagination-button" style="background: #f1f5f9; color: #64748b;" onclick="resetTable()">🗑️ 清空重來</button>
+        <button id="clearAllBtn" class="pagination-button" style="background: #f1f5f9; color: #64748b;" onclick="confirmResetTable()">🗑️ 清空重來</button>
         <button id="checkoutBtn" class="pagination-button" onclick="submitOrders()">
             <span id="checkoutButtonText">🚀 結帳並傳送至總部</span>
         </button>
