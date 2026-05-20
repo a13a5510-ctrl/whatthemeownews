@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://whatthemeownews-erp-backend-taipei-324921111026.asia-east1.run.app";
+const API_BASE_URL = "[https://whatthemeownews-erp-backend-taipei-324921111026.asia-east1.run.app](https://whatthemeownews-erp-backend-taipei-324921111026.asia-east1.run.app)";
 let products = [];
 let activeInput = null;
 let currentNoteRow = null;
@@ -7,12 +7,18 @@ let baseServerReceived = 0;
 let speechRecognition = null; 
 let rowSpeechRecognition = null;
 
+// ✨ 補登模式全域變數
+let customDateMode = false;
+let customDateObj = new Date();
+
+// ✨ 智能鬧鐘儲存庫
+let scheduledAlarms = {}; 
+
 // ==========================================
-// 1. 系統初始化
+// 1. 系統初始化與時間顯示 (支援補登)
 // ==========================================
 window.onload = async () => {
     updateDateDisplay();
-    // 🌟 大師優化：將更新頻率從 60000 (一分鐘) 改為 1000 (一秒鐘)，讓秒數會跳動！
     setInterval(updateDateDisplay, 1000); 
     
     await fetchProductsFromCloud();
@@ -21,25 +27,46 @@ window.onload = async () => {
 };
 
 function updateDateDisplay() {
-    const now = new Date();
+    // 若開啟補登模式，時間就停留在選定的時間；否則使用現實時間
+    const now = customDateMode ? customDateObj : new Date();
     const days = ['日', '一', '二', '三', '四', '五', '六'];
-    
-    // 格式化日期字串
     const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (星期${days[now.getDay()]})`;
-    
-    // 格式化時間字串 (加入秒數)
     const hh = String(now.getHours()).padStart(2,'0');
     const mm = String(now.getMinutes()).padStart(2,'0');
     const ss = String(now.getSeconds()).padStart(2,'0');
     const timeStr = `${hh}:${mm}:${ss}`;
     
-    // 🌟 大師精準打擊：抓取新版 HTML 對應的 ID
     const clockEl = document.getElementById('clock');
     const dateEl = document.getElementById('date');
     
-    // 將資料注入畫面
     if (clockEl) clockEl.textContent = timeStr;
-    if (dateEl) dateEl.textContent = dateStr;
+    if (dateEl) {
+        dateEl.innerHTML = `${dateStr} ${customDateMode ? '<br><span style="color:#f59e0b; font-weight:bold;">⏳ 歷史補登模式中</span>' : ''}`;
+    }
+}
+
+// 啟動補登模式
+function toggleCustomDate() {
+    const input = document.getElementById('customDateInput');
+    input.onchange = (e) => {
+        if(e.target.value) {
+            customDateMode = true;
+            customDateObj = new Date(e.target.value);
+            document.getElementById('cancelCustomDateBtn').style.display = 'inline-block';
+            updateDateDisplay();
+            showToast("✍️ 已進入補登模式，結帳將紀錄為選定時間！");
+        }
+    };
+    input.showPicker ? input.showPicker() : input.click();
+}
+
+// 取消補登模式
+function cancelCustomDate() {
+    customDateMode = false;
+    document.getElementById('customDateInput').value = '';
+    document.getElementById('cancelCustomDateBtn').style.display = 'none';
+    updateDateDisplay();
+    showToast("🕒 已恢復即時時間模式");
 }
 
 function showToast(message) {
@@ -49,6 +76,9 @@ function showToast(message) {
     setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2800);
 }
 
+// ==========================================
+// 2. 雲端資料同步區
+// ==========================================
 async function fetchProductsFromCloud() {
     try {
         const res = await fetch(`${API_BASE_URL}/api/admin/products`);
@@ -87,6 +117,9 @@ function updateLiveRevenue() {
     document.getElementById('dashTotal').textContent = `$${(baseServerReceived + localReceived).toLocaleString()}`;
 }
 
+// ==========================================
+// 3. 動態表格與防呆清空機制
+// ==========================================
 function renderTableHeader() {
     const tr = document.getElementById('headerRow');
     let html = `
@@ -125,6 +158,20 @@ function clearSpecificRow(rowNum) {
     noteBtn.classList.remove('has-note');
     noteBtn.textContent = '📝';
     document.getElementById(`row-${rowNum}`).style.backgroundColor = ''; 
+    
+    // 清除該行的鬧鐘
+    if(scheduledAlarms[rowNum]) {
+        clearTimeout(scheduledAlarms[rowNum]);
+        delete scheduledAlarms[rowNum];
+    }
+}
+
+// ✨ 防呆警示：清空所有表格
+function confirmResetTable() {
+    if (confirm("⚠️ 確定要清空畫面上所有未結帳的資料嗎？\n(按下確定後將無法復原喔！)")) {
+        resetTable();
+        showToast("🧹 畫面資料已全數清空！");
+    }
 }
 
 function generateRowHTML(i) {
@@ -173,6 +220,10 @@ function renderTableRows(start, end) {
 }
 
 function resetTable() {
+    // 清除所有背景鬧鐘
+    for (let key in scheduledAlarms) clearTimeout(scheduledAlarms[key]);
+    scheduledAlarms = {};
+
     currentRowCount = 10;
     renderTableRows(1, currentRowCount);
     updateLiveRevenue();
@@ -238,6 +289,9 @@ function calculateChange(rowNum, payAmount) {
     }
 }
 
+// ==========================================
+// 4. 虛擬鍵盤邏輯
+// ==========================================
 function setActiveInput(inputElement) {
     document.querySelectorAll('.qty-input').forEach(el => el.style.borderColor = '#ccc');
     activeInput = inputElement;
@@ -280,6 +334,9 @@ function initVirtualKeypad() {
     });
 }
 
+// ==========================================
+// 5. 🌟 語音解析與智能鬧鐘引擎
+// ==========================================
 function startVoiceOrder(rowNum) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -343,6 +400,8 @@ async function parseVoiceOrderWithAI(transcript, rowNum) {
                 const noteBtn = document.getElementById(`noteBtn-${rowNum}`);
                 noteBtn.classList.add('has-note');
                 noteBtn.textContent = '📄';
+                // ✨ 觸發智能鬧鐘偵測
+                parseTimeAndScheduleAlarm(rowNum, parsedData.note);
             }
 
             if (parsedData.is_paid === true) {
@@ -380,6 +439,9 @@ async function parseVoiceOrderWithAI(transcript, rowNum) {
     }
 }
 
+// ==========================================
+// 6. 備註與智能鬧鐘系統
+// ==========================================
 function openNoteModal(rowNum) {
     currentNoteRow = rowNum;
     document.getElementById('noteInput').value = document.getElementById(`noteVal-${rowNum}`).value;
@@ -396,8 +458,17 @@ function confirmNote() {
     const noteText = document.getElementById('noteInput').value.trim();
     document.getElementById(`noteVal-${currentNoteRow}`).value = noteText;
     const btn = document.getElementById(`noteBtn-${currentNoteRow}`);
-    if (noteText) { btn.classList.add('has-note'); btn.textContent = '📄'; } 
-    else { btn.classList.remove('has-note'); btn.textContent = '📝'; }
+    
+    if (noteText) { 
+        btn.classList.add('has-note'); 
+        btn.textContent = '📄'; 
+        // ✨ 觸發智能鬧鐘偵測
+        parseTimeAndScheduleAlarm(currentNoteRow, noteText);
+    } else { 
+        btn.classList.remove('has-note'); 
+        btn.textContent = '📝'; 
+        if(scheduledAlarms[currentNoteRow]) clearTimeout(scheduledAlarms[currentNoteRow]);
+    }
     closeNoteModal();
 }
 
@@ -421,8 +492,81 @@ function toggleSpeech() {
     speechRecognition.start();
 }
 
+// ✨ 智能鬧鐘核心邏輯
+function parseTimeAndScheduleAlarm(rowNum, noteText) {
+    if(scheduledAlarms[rowNum]) {
+        clearTimeout(scheduledAlarms[rowNum]);
+        delete scheduledAlarms[rowNum];
+    }
+
+    // 抓取格式：12:30, 18點30分, 下午5點, 6點...
+    const timeRegex = /(\d{1,2})[:：點](\d{1,2})?/;
+    const match = noteText.match(timeRegex);
+    
+    if(match) {
+        let hour = parseInt(match[1]);
+        let minute = match[2] ? parseInt(match[2]) : 0;
+        
+        // 自動判斷下午時間 (小於 8 點通常指下午/晚上)
+        if (hour < 8 && !noteText.includes("早") && !noteText.includes("上午")) hour += 12; 
+
+        let targetTime = new Date(); 
+        targetTime.setHours(hour, minute, 0, 0);
+        
+        let timeToTarget = targetTime.getTime() - new Date().getTime();
+        let alarmTimeMs = timeToTarget - (10 * 60 * 1000); // 提前 10 分鐘響鈴
+        
+        if(alarmTimeMs > 0 && alarmTimeMs < 12 * 60 * 60 * 1000) { 
+            scheduledAlarms[rowNum] = setTimeout(() => {
+                triggerAlarm(rowNum, noteText, targetTime);
+            }, alarmTimeMs);
+            showToast(`⏰ 鬧鐘已設定：將於約定前10分鐘提醒您！`);
+        } else if (timeToTarget > 0 && alarmTimeMs <= 0) {
+            showToast(`⚠️ 注意：距離約定時間已不到 10 分鐘！`);
+        }
+    }
+}
+
+function triggerAlarm(rowNum, noteText, targetTime) {
+    const modal = document.getElementById('alarmModal');
+    const details = document.getElementById('alarmDetails');
+    const timeStr = `${String(targetTime.getHours()).padStart(2,'0')}:${String(targetTime.getMinutes()).padStart(2,'0')}`;
+    
+    details.innerHTML = `第 <strong style="font-size:32px; color:#ef4444;">${rowNum}</strong> 單<br><br>約定取餐：<span style="color:#f59e0b; font-weight:bold;">${timeStr}</span><br>備註內容：${noteText}`;
+    modal.style.display = 'flex';
+    
+    // 強制裝置連續震動
+    if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 1000]); 
+    
+    // 發出「嗶嗶」聲音
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.6);
+    } catch(e) {}
+}
+
+function stopAlarm() {
+    document.getElementById('alarmModal').style.display = 'none';
+    if (navigator.vibrate) navigator.vibrate(0); 
+}
+
+// ==========================================
+// 7. 🚀 結帳打包與送出 (支援補登時間)
+// ==========================================
 async function submitOrders() {
     const payload = [];
+    
+    // ✨ 準備補登的時間字串 (如果是補登模式，產生 ISO 時間給後端)
+    let customTimeIso = null;
+    if (customDateMode) {
+        customTimeIso = customDateObj.toISOString();
+    }
+
     for (let i = 1; i <= currentRowCount; i++) {
         const rawTotal = parseInt(document.getElementById(`total-${i}`).dataset.rawTotal) || 0;
         if (rawTotal > 0) {
@@ -447,7 +591,8 @@ async function submitOrders() {
                 total_amount: rawTotal, 
                 received: isReceived, 
                 items: itemsStr,
-                note: note 
+                note: note,
+                created_at: customTimeIso // ✨ 將補登時間一併打包
             });
         }
     }
@@ -479,13 +624,11 @@ function toggleCalculator() {
     calc.style.display = calc.style.display === 'none' ? 'block' : 'none';
 }
 
-// 🌟 大師優化：防禦型 eval
 function calcAction(val) {
     const display = document.getElementById('calcDisplay');
     if (val === 'C') { display.value = ''; } 
     else if (val === '=') { 
         try { 
-            // 防護機制：只允許執行數字與數學符號，避免 XSS 惡意指令
             if (/^[\d+\-*/.]+$/.test(display.value)) {
                 display.value = eval(display.value); 
             } else {
