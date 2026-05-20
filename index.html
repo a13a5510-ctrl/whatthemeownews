@@ -126,10 +126,15 @@
                 <div id="clock" style="font-size: 1.8rem; font-weight: bold; color: #66b3ff; letter-spacing: 2px;">00:00:00</div>
                 <div id="date" style="font-size: 1rem; color: #a0aec0; margin-top: 5px;">載入日期...</div>
                 
-                <div style="margin-top: 8px;">
-                    <button onclick="toggleCustomDate()" style="background: #4b5563; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: 0.2s;">✍️ 歷史補登</button>
-                    <button onclick="cancelCustomDate()" id="cancelCustomDateBtn" style="display: none; background: #ef4444; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; margin-left: 5px;">❌ 退出補登</button>
-                    <input type="datetime-local" id="customDateInput" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;">
+                <div style="margin-top: 8px; display: flex; justify-content: center; align-items: center;">
+                    
+                    <div style="position: relative; display: inline-block;">
+                        <input type="datetime-local" id="customDateInput" onchange="applyCustomDate(this)" 
+                               style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;">
+                        <button style="background: #4b5563; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; pointer-events: none;">✍️ 歷史補登</button>
+                    </div>
+
+                    <button onclick="cancelCustomDate()" id="cancelCustomDateBtn" style="display: none; background: #ef4444; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; margin-left: 5px; z-index: 11;">❌ 退出補登</button>
                 </div>
             </div>
         </div>
