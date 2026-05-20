@@ -45,22 +45,20 @@ function updateDateDisplay() {
     }
 }
 
-// 啟動補登模式
-function toggleCustomDate() {
-    const input = document.getElementById('customDateInput');
-    input.onchange = (e) => {
-        if(e.target.value) {
-            customDateMode = true;
-            customDateObj = new Date(e.target.value);
-            document.getElementById('cancelCustomDateBtn').style.display = 'inline-block';
-            updateDateDisplay();
-            showToast("✍️ 已進入補登模式，結帳將紀錄為選定時間！");
-        }
-    };
-    input.showPicker ? input.showPicker() : input.click();
+// ==========================================
+// ✨ 啟動補登模式 (由透明的 datetime-local 直接觸發)
+// ==========================================
+function applyCustomDate(inputElement) {
+    if(inputElement.value) {
+        customDateMode = true;
+        customDateObj = new Date(inputElement.value);
+        document.getElementById('cancelCustomDateBtn').style.display = 'inline-block';
+        updateDateDisplay();
+        showToast("✍️ 已進入補登模式，結帳將紀錄為選定時間！");
+    }
 }
 
-// 取消補登模式
+// 取消補登模式 (這個保留原本的稍微修改一下即可)
 function cancelCustomDate() {
     customDateMode = false;
     document.getElementById('customDateInput').value = '';
