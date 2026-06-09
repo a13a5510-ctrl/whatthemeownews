@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>喵逮雞自助點餐機</title>
+    <style>
+        /* CSS resets and custom properties */
+        :root {
+            --color-bg: #fffbeb;
+            --color-text-main: #7c2d12;
+            --color-bubble-bg: #ffffff;
+            --color-primary: #ea580c;
+            --color-primary-light: #ffedd5;
+            --color-card-bg: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: var(--color-bg);
+            color: var(--color-text-main);
+            font-family: 'PingFang TC', 'Heiti TC', 'Noto Sans TC', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            cursor: pointer;
+            padding: 20px;
+        }
+
+        /* Container for central element */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 600px;
+            gap: 30px;
+            text-align: center;
+        }
+
+        /* Cat Avatar style and animation */
+        #catAvatar {
+            font-size: 120px;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--color-primary-light);
+            border-radius: 50%;
+            box-shadow: 0 20px 40px rgba(234, 88, 12, 0.15);
+            animation: floatAndPulse 3s ease-in-out infinite;
+            transition: all 0.3s ease;
+        }
+
+        #catAvatar.listening {
+            animation: listeningBeat 0.8s ease-in-out infinite alternate;
+            background-color: #fecaca;
+            box-shadow: 0 20px 40px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Speech/chat bubble */
+        .chat-bubble-container {
+            position: relative;
+            width: 90%;
+            max-width: 480px;
+        }
+
+        #chatBubble {
+            background-color: var(--color-bubble-bg);
+            padding: 20px 30px;
+            border-radius: 25px;
+            font-size: 20px;
+            font-weight: bold;
+            line-height: 1.6;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            position: relative;
+            transition: all 0.3s ease;
+            display: inline-block;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #chatBubble::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 12px;
+            border-style: solid;
+            border-color: transparent transparent var(--color-bubble-bg) transparent;
+        }
+
+        /* Hidden Order Confirmation Card */
+        #orderCard {
+            width: 90%;
+            max-width: 480px;
+            background-color: var(--color-card-bg);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-top: 20px;
+            box-sizing: border-box;
+            border: 2px dashed #fed7aa;
+        }
+
+        .order-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--color-primary);
+            border-bottom: 2px solid #fff7ed;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+            max-height: 150px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .order-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 20px;
+            font-weight: 900;
+            color: #ef4444;
+            border-top: 2px solid #fff7ed;
+            padding-top: 15px;
+            margin-top: 5px;
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .kiosk-btn {
+            flex: 1;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-confirm {
+            background-color: #10b981;
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-confirm:active {
+            transform: scale(0.97);
+        }
+
+        .btn-cancel {
+            background-color: #94a3b8;
+            color: white;
+        }
+
+        .btn-cancel:active {
+            transform: scale(0.97);
+        }
+
+        /* Animations */
+        @keyframes floatAndPulse {
+            0% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-10px) scale(1.05);
+            }
+            100% {
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes listeningBeat {
+            from {
+                transform: scale(1);
+            }
+            to {
+                transform: scale(1.15);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Hint Text */
+        .hint-text {
+            font-size: 14px;
+            color: #9a3412;
+            opacity: 0.6;
+            margin-top: 10px;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+    </style>
+</head>
+<body onclick="startKiosk()">
+
+    <div class="container">
+        <!-- Cat avatar with pulse animation -->
+        <div id="catAvatar">🐱</div>
+        
+        <!-- Speech Bubble -->
+        <div class="chat-bubble-container">
+            <div id="chatBubble">喵～歡迎光臨！點擊畫面開始對我說話吧！</div>
+        </div>
+
+        <!-- Hint to user -->
+        <div class="hint-text">💡 點擊螢幕任何地方即可開始語音點單</div>
+
+        <!-- Hidden Order Confirmation Card -->
+        <div id="orderCard" onclick="event.stopPropagation();">
+            <div class="order-title">
+                <span>📝 點餐確認</span>
+                <span id="orderNoText" style="font-size: 12px; background: #ffedd5; padding: 4px 8px; border-radius: 8px;">D00-01</span>
+            </div>
+            
+            <div class="order-items" id="orderItemsContainer">
+                <!-- Items will be generated here -->
+            </div>
+            
+            <div class="order-total">
+                <span>應付總額</span>
+                <span id="orderTotalText">$0</span>
+            </div>
+
+            <div class="order-actions">
+                <button class="kiosk-btn btn-cancel" onclick="cancelKioskOrder(); event.stopPropagation();">取消重說</button>
+                <button class="kiosk-btn btn-confirm" onclick="confirmKioskOrder(); event.stopPropagation();">確認送單</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script file containing interaction logic -->
+    <script src="kiosk.js"></script>
+</body>
+</html>
